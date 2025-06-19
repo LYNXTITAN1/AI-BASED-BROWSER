@@ -6,7 +6,7 @@ import TabManager from './components/TabManager';
 import AIAssistant from './components/AIAssistant';
 import ContentArea from './components/ContentArea';
 import Sidebar from './components/Sidebar';
-import { Tab, AIState, SecurityStatus } from './types';
+import { Tab, AIState } from './types';
 
 function App() {
   const [tabs, setTabs] = useState<Tab[]>([

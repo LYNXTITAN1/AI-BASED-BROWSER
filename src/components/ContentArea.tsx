@@ -78,6 +78,14 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
     setLoadingState('blocked');
   };
 
+  const handleSearchAction = (searchTerm: string) => {
+    const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = searchTerm;
+      searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+    }
+  };
+
   // Render different content based on the active tab URL
   const renderContent = () => {
     // Home page
@@ -107,13 +115,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
               className="flex flex-wrap justify-center gap-4 mt-8"
             >
               <button 
-                onClick={() => {
-                  const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                  if (searchInput) {
-                    searchInput.focus();
-                    searchInput.value = '';
-                  }
-                }}
+                onClick={() => handleSearchAction('')}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors"
               >
                 <Search className="w-5 h-5" />
@@ -215,13 +217,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
                   className="flex flex-col items-center space-y-2 p-4 bg-white rounded-xl hover:shadow-md transition-all"
-                  onClick={() => {
-                    const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                    if (searchInput) {
-                      searchInput.value = link.url;
-                      searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-                    }
-                  }}
+                  onClick={() => handleSearchAction(link.url)}
                 >
                   <span className="text-2xl">{link.icon}</span>
                   <span className="text-sm font-medium text-gray-700">{link.name}</span>
@@ -239,13 +235,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
                 ].map((domain) => (
                   <button
                     key={domain}
-                    onClick={() => {
-                      const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                      if (searchInput) {
-                        searchInput.value = domain;
-                        searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-                      }
-                    }}
+                    onClick={() => handleSearchAction(domain)}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
                   >
                     {domain}
@@ -405,37 +395,19 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
                     <h4 className="font-medium text-blue-900 mb-2">AI Alternatives</h4>
                     <div className="space-y-2 text-sm">
                       <button 
-                        onClick={() => {
-                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                          if (searchInput) {
-                            searchInput.value = `site:${new URL(activeTab.url).hostname} summary`;
-                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-                          }
-                        }}
+                        onClick={() => handleSearchAction(`site:${new URL(activeTab.url).hostname} summary`)}
                         className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
                       >
                         → Get AI summary of this website
                       </button>
                       <button 
-                        onClick={() => {
-                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                          if (searchInput) {
-                            searchInput.value = `${activeTab.title} alternative websites`;
-                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-                          }
-                        }}
+                        onClick={() => handleSearchAction(`${activeTab.title} alternative websites`)}
                         className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
                       >
                         → Find similar websites
                       </button>
                       <button 
-                        onClick={() => {
-                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
-                          if (searchInput) {
-                            searchInput.value = `${new URL(activeTab.url).hostname} reviews`;
-                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-                          }
-                        }}
+                        onClick={() => handleSearchAction(`${new URL(activeTab.url).hostname} reviews`)}
                         className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
                       >
                         → Search for reviews and info
