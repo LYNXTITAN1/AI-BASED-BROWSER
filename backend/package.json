@@ -1,7 +1,7 @@
 {
   "name": "ai-browser-backend",
   "version": "1.0.0",
-  "description": "Backend API for AI Browser Pro",
+  "description": "Backend API for AI Browser Pro with free search engines",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "dev": "node --watch server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["ai", "browser", "search", "api"],
+  "keywords": ["ai", "browser", "search", "api", "free"],
   "author": "AI Browser Pro Team",
   "license": "MIT",
   "dependencies": {
@@ -17,10 +17,11 @@
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "dotenv": "^16.3.1",
-    "node-fetch": "^3.3.2",
+    "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "rate-limiter-flexible": "^3.0.8",
-    "compression": "^1.7.4"
+    "compression": "^1.7.4",
+    "node-cache": "^5.1.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
