@@ -12,7 +12,8 @@ import {
   Shield,
   Menu,
   Star,
-  Globe
+  Globe,
+  Zap
 } from 'lucide-react';
 import { AIState } from '../types';
 
@@ -55,7 +56,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       'youtube.com', 'youtu.be', 'google.com', 'github.com', 'stackoverflow.com',
       'reddit.com', 'twitter.com', 'x.com', 'linkedin.com', 'facebook.com',
       'instagram.com', 'tiktok.com', 'netflix.com', 'spotify.com', 'amazon.com',
-      'ebay.com', 'wikipedia.org', 'medium.com', 'gmail.com', 'drive.google.com'
+      'ebay.com', 'wikipedia.org', 'medium.com', 'gmail.com', 'drive.google.com',
+      'news.ycombinator.com', 'dev.to', 'hashnode.com', 'codepen.io', 'codesandbox.io'
     ];
     
     // Check if it's a popular domain
@@ -63,15 +65,28 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       return true;
     }
     
-    // Domain patterns - supports ALL TLDs
+    // Enhanced domain patterns - supports ALL TLDs and subdomains
     const domainPatterns = [
+      // Standard domains
       /^[\w\.-]+\.[\w]{2,}$/,
       /^[\w\.-]+\.[\w]{2,}\/.*$/,
+      // Subdomains
       /^[\w\.-]+\.[\w\.-]+\.[\w]{2,}$/,
+      /^[\w\.-]+\.[\w\.-]+\.[\w]{2,}\/.*$/,
+      // IP addresses
       /^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/,
+      /^(\d{1,3}\.){3}\d{1,3}(:\d+)?\/.*$/,
+      // Localhost
       /^localhost(:\d+)?$/,
+      /^localhost(:\d+)?\/.*$/,
+      // Special cases
       /^youtu\.be\/[\w-]+$/,
-      /^(www\.)?youtube\.com\/.*$/
+      /^(www\.)?youtube\.com\/.*$/,
+      // International domains
+      /^[\w\.-]+\.(co\.uk|com\.au|co\.jp|co\.kr|com\.br|co\.in|com\.mx|co\.za)$/,
+      /^[\w\.-]+\.(de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|lt|lv|ee)$/,
+      // New TLDs
+      /^[\w\.-]+\.(io|ai|app|dev|tech|blog|news|shop|store|online|site|website|cloud|digital)$/
     ];
     
     return domainPatterns.some(pattern => pattern.test(trimmedText));
@@ -98,11 +113,11 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     if (!query.trim()) return;
 
     if (isUrl(query)) {
-      // Handle direct URL navigation - navigate within the browser
+      // Handle direct URL navigation
       const url = formatUrl(query);
       onNavigateToUrl(url);
     } else {
-      // Use Google search - navigate within the browser
+      // Use Google search
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       onNavigateToUrl(searchUrl);
     }
@@ -111,6 +126,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
+      setSearchFocused(false);
+      setSuggestions([]);
     }
   };
 
@@ -118,60 +135,64 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     const suggestions = [];
     const lowerValue = value.toLowerCase();
     
-    // YouTube-specific suggestions
-    if (lowerValue.includes('youtube') || lowerValue.includes('video')) {
-      suggestions.push('youtube.com');
-      suggestions.push('youtu.be');
-      suggestions.push(`${value} site:youtube.com`);
+    // Direct domain suggestions for popular sites
+    const popularSites = [
+      { domain: 'youtube.com', trigger: ['youtube', 'video', 'watch'] },
+      { domain: 'github.com', trigger: ['github', 'git', 'code', 'repo'] },
+      { domain: 'stackoverflow.com', trigger: ['stack', 'overflow', 'programming'] },
+      { domain: 'reddit.com', trigger: ['reddit', 'r/', 'subreddit'] },
+      { domain: 'twitter.com', trigger: ['twitter', 'tweet', 'x.com'] },
+      { domain: 'linkedin.com', trigger: ['linkedin', 'professional', 'career'] },
+      { domain: 'facebook.com', trigger: ['facebook', 'fb', 'social'] },
+      { domain: 'instagram.com', trigger: ['instagram', 'insta', 'photo'] },
+      { domain: 'netflix.com', trigger: ['netflix', 'movie', 'series'] },
+      { domain: 'spotify.com', trigger: ['spotify', 'music', 'playlist'] },
+      { domain: 'amazon.com', trigger: ['amazon', 'shop', 'buy'] },
+      { domain: 'wikipedia.org', trigger: ['wiki', 'wikipedia', 'encyclopedia'] },
+      { domain: 'medium.com', trigger: ['medium', 'article', 'blog'] },
+      { domain: 'dev.to', trigger: ['dev.to', 'developer', 'programming'] },
+      { domain: 'codepen.io', trigger: ['codepen', 'code', 'demo'] },
+      { domain: 'news.ycombinator.com', trigger: ['hacker news', 'hn', 'tech news'] }
+    ];
+
+    // Check for popular site matches
+    popularSites.forEach(site => {
+      if (site.trigger.some(trigger => lowerValue.includes(trigger))) {
+        suggestions.push(site.domain);
+      }
+    });
+
+    // If it looks like a partial domain, suggest completions
+    if (lowerValue.length > 2 && !lowerValue.includes(' ')) {
+      const commonTlds = ['com', 'org', 'net', 'edu', 'gov', 'io', 'ai', 'co', 'app', 'dev'];
+      const internationalTlds = ['co.uk', 'com.au', 'de', 'fr', 'jp', 'cn', 'in', 'br'];
+      
+      if (!value.includes('.')) {
+        // Suggest adding TLDs
+        commonTlds.forEach(tld => {
+          suggestions.push(`${value}.${tld}`);
+        });
+        internationalTlds.slice(0, 3).forEach(tld => {
+          suggestions.push(`${value}.${tld}`);
+        });
+      }
     }
-    
-    // Google-specific suggestions
-    if (lowerValue.includes('google')) {
-      suggestions.push('google.com');
-      suggestions.push('gmail.com');
-      suggestions.push('drive.google.com');
-    }
-    
-    // Popular domain suggestions based on input
-    const domainSuggestions = [];
-    if (lowerValue.includes('github')) domainSuggestions.push('github.com');
-    if (lowerValue.includes('reddit')) domainSuggestions.push('reddit.com');
-    if (lowerValue.includes('twitter')) domainSuggestions.push('twitter.com');
-    if (lowerValue.includes('facebook')) domainSuggestions.push('facebook.com');
-    if (lowerValue.includes('instagram')) domainSuggestions.push('instagram.com');
-    if (lowerValue.includes('linkedin')) domainSuggestions.push('linkedin.com');
-    if (lowerValue.includes('netflix')) domainSuggestions.push('netflix.com');
-    if (lowerValue.includes('spotify')) domainSuggestions.push('spotify.com');
-    if (lowerValue.includes('amazon')) domainSuggestions.push('amazon.com');
-    
-    suggestions.push(...domainSuggestions);
-    
+
     // AI-powered suggestions
-    suggestions.push(`AI Summary: ${value}`);
-    suggestions.push(`Research: ${value}`);
-    
-    // Domain suggestions for popular TLDs
-    const popularTlds = ['com', 'org', 'net', 'edu', 'gov', 'io', 'ai', 'co', 'app', 'dev'];
-    popularTlds.forEach(tld => {
-      if (!value.includes('.') && !domainSuggestions.length) {
-        suggestions.push(`${value}.${tld}`);
-      }
-    });
-    
-    // Search variations with Google
-    suggestions.push(`${value} site:reddit.com`);
-    suggestions.push(`${value} latest news`);
-    suggestions.push(`${value} tutorial`);
-    suggestions.push(`${value} reviews`);
-    
-    // International domains
-    const internationalTlds = ['co.uk', 'com.au', 'de', 'fr', 'jp', 'cn', 'in', 'br'];
-    internationalTlds.forEach(tld => {
-      if (!value.includes('.') && !domainSuggestions.length) {
-        suggestions.push(`${value}.${tld}`);
-      }
-    });
-    
+    if (lowerValue.length > 3) {
+      suggestions.push(`AI Summary: ${value}`);
+      suggestions.push(`Research: ${value}`);
+    }
+
+    // Search variations
+    if (!isUrl(value)) {
+      suggestions.push(`${value} tutorial`);
+      suggestions.push(`${value} reviews`);
+      suggestions.push(`${value} latest news`);
+      suggestions.push(`${value} site:reddit.com`);
+    }
+
+    // Remove duplicates and limit
     return [...new Set(suggestions)].slice(0, 8);
   };
 
@@ -209,6 +230,15 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     if (suggestion.startsWith('Research:')) return <Bot className="w-4 h-4 text-purple-500" />;
     if (suggestion.includes('youtube.com') || suggestion.includes('youtu.be')) return <span className="text-sm">📺</span>;
     if (suggestion.includes('google.com') || suggestion.includes('gmail.com')) return <span className="text-sm">🔍</span>;
+    if (suggestion.includes('github.com')) return <span className="text-sm">🐙</span>;
+    if (suggestion.includes('stackoverflow.com')) return <span className="text-sm">📚</span>;
+    if (suggestion.includes('reddit.com')) return <span className="text-sm">🤖</span>;
+    if (suggestion.includes('twitter.com')) return <span className="text-sm">🐦</span>;
+    if (suggestion.includes('linkedin.com')) return <span className="text-sm">💼</span>;
+    if (suggestion.includes('netflix.com')) return <span className="text-sm">🎬</span>;
+    if (suggestion.includes('spotify.com')) return <span className="text-sm">🎧</span>;
+    if (suggestion.includes('amazon.com')) return <span className="text-sm">📦</span>;
+    if (suggestion.includes('wikipedia.org')) return <span className="text-sm">📖</span>;
     if (suggestion.includes('.')) return <Globe className="w-4 h-4 text-green-500" />;
     return <Search className="w-4 h-4 text-gray-400" />;
   };
@@ -217,12 +247,22 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     if (suggestion.startsWith('AI')) return 'AI Enhanced';
     if (suggestion.includes('youtube.com') || suggestion.includes('youtu.be')) return 'Video';
     if (suggestion.includes('google.com') || suggestion.includes('gmail.com')) return 'Google';
-    if (suggestion.includes('.com')) return 'Popular';
+    if (suggestion.includes('github.com')) return 'Code';
+    if (suggestion.includes('stackoverflow.com')) return 'Q&A';
+    if (suggestion.includes('reddit.com')) return 'Community';
+    if (suggestion.includes('netflix.com')) return 'Streaming';
+    if (suggestion.includes('spotify.com')) return 'Music';
+    if (suggestion.includes('amazon.com')) return 'Shopping';
+    if (suggestion.includes('wikipedia.org')) return 'Knowledge';
+    if (suggestion.includes('.com')) return 'Website';
     if (suggestion.includes('.org')) return 'Organization';
     if (suggestion.includes('.edu')) return 'Educational';
     if (suggestion.includes('.gov')) return 'Government';
     if (suggestion.includes('.io') || suggestion.includes('.ai') || suggestion.includes('.dev')) return 'Tech';
     if (suggestion.includes('site:')) return 'Site Search';
+    if (suggestion.includes('tutorial')) return 'Learning';
+    if (suggestion.includes('reviews')) return 'Reviews';
+    if (suggestion.includes('news')) return 'News';
     return null;
   };
 
@@ -289,7 +329,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
             onKeyPress={handleKeyPress}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-            placeholder="Search Google, visit YouTube, or any domain worldwide..."
+            placeholder="Search Google, visit any domain, or enter URL..."
             className="w-full pl-24 pr-20 py-3 bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none"
           />
 
@@ -351,6 +391,9 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                       {getSuggestionBadge(suggestion)}
                     </span>
+                  )}
+                  {isUrl(suggestion) && (
+                    <Zap className="w-3 h-3 text-green-500" />
                   )}
                 </div>
               ))}

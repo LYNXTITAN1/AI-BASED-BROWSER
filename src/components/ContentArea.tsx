@@ -19,7 +19,10 @@ import {
   AlertTriangle,
   RefreshCw,
   CheckCircle,
-  Loader
+  Loader,
+  Monitor,
+  Smartphone,
+  Tablet
 } from 'lucide-react';
 import { Tab, AIState } from '../types';
 
@@ -31,22 +34,17 @@ interface ContentAreaProps {
 const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error' | 'blocked'>('loading');
   const [retryCount, setRetryCount] = useState(0);
+  const [iframeError, setIframeError] = useState(false);
 
   useEffect(() => {
     if (activeTab?.url && activeTab.url !== 'ai-browser://home') {
       setLoadingState('loading');
       setRetryCount(0);
+      setIframeError(false);
       
-      // Simulate realistic loading with better success rate
+      // Simulate realistic loading
       const timer = setTimeout(() => {
-        // Most websites should load successfully now
-        const shouldSucceed = Math.random() > 0.2; // 80% success rate
-        
-        if (shouldSucceed) {
-          setLoadingState('success');
-        } else {
-          setLoadingState('blocked');
-        }
+        setLoadingState('success');
       }, 1200);
 
       return () => clearTimeout(timer);
@@ -68,12 +66,16 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     setLoadingState('loading');
+    setIframeError(false);
     
     setTimeout(() => {
-      // Higher success rate on retry
-      const shouldSucceed = Math.random() > 0.1; // 90% success rate on retry
-      setLoadingState(shouldSucceed ? 'success' : 'blocked');
+      setLoadingState('success');
     }, 800);
+  };
+
+  const handleIframeError = () => {
+    setIframeError(true);
+    setLoadingState('blocked');
   };
 
   // Render different content based on the active tab URL
@@ -141,7 +143,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
               {
                 icon: Shield,
                 title: 'Smart Loading',
-                description: 'Intelligent website loading with fallback options for maximum compatibility',
+                description: 'Intelligent website loading with iframe embedding and fallback options',
                 color: 'green',
                 badge: 'Reliable'
               },
@@ -256,36 +258,41 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
       );
     }
 
-    // External website handling - Universal approach
+    // External website handling - Real iframe embedding
     if (activeTab.url.startsWith('http')) {
       return (
         <div className="h-full flex flex-col">
           {/* Enhanced Website Info Bar */}
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 border-b border-gray-200 p-4">
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 border-b border-gray-200 p-3">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <Globe className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-blue-900">Universal Browser</span>
+                <Globe className="w-4 h-4 text-blue-600" />
+                <span className="font-medium text-blue-900 text-sm">Live Website</span>
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-sm text-gray-700 truncate block">{activeTab.url}</span>
+                <span className="text-xs text-gray-700 truncate block">{activeTab.url}</span>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-1">
-                  {loadingState === 'success' && <CheckCircle className="w-4 h-4 text-green-500" />}
-                  {loadingState === 'loading' && <Loader className="w-4 h-4 text-blue-500 animate-spin" />}
-                  {loadingState === 'blocked' && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
+                  {loadingState === 'success' && !iframeError && <CheckCircle className="w-3 h-3 text-green-500" />}
+                  {loadingState === 'loading' && <Loader className="w-3 h-3 text-blue-500 animate-spin" />}
+                  {(loadingState === 'blocked' || iframeError) && <AlertTriangle className="w-3 h-3 text-yellow-500" />}
                   <span className="text-xs text-gray-600">
-                    {loadingState === 'success' && 'Loaded Successfully'}
+                    {loadingState === 'success' && !iframeError && 'Loaded'}
                     {loadingState === 'loading' && 'Loading...'}
-                    {loadingState === 'blocked' && 'Embedding Restricted'}
+                    {(loadingState === 'blocked' || iframeError) && 'Blocked'}
                   </span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Monitor className="w-3 h-3 text-gray-500" />
+                  <Smartphone className="w-3 h-3 text-gray-400" />
+                  <Tablet className="w-3 h-3 text-gray-400" />
                 </div>
                 <button 
                   onClick={() => window.open(activeTab.url, '_blank')}
-                  className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                  className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
                 >
-                  Open in New Tab
+                  Open External
                 </button>
               </div>
             </div>
@@ -311,138 +318,78 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
               </div>
             )}
 
-            {loadingState === 'success' && (
-              <div className="h-full">
-                {/* Simulated Website Content */}
-                <div className="h-full bg-white p-8 overflow-y-auto">
-                  <div className="max-w-4xl mx-auto">
-                    {/* Website Header */}
-                    <div className="border-b border-gray-200 pb-6 mb-8">
-                      <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                          <Globe className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h1 className="text-2xl font-bold text-gray-900">{activeTab.title}</h1>
-                          <p className="text-gray-600">{activeTab.url}</p>
-                        </div>
-                      </div>
-                      
-                      {/* AI Enhancement Banner */}
-                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
-                        <div className="flex items-center space-x-3">
-                          <Bot className="w-5 h-5 text-purple-600" />
-                          <div className="flex-1">
-                            <h3 className="font-medium text-purple-900">AI Enhanced Browsing</h3>
-                            <p className="text-sm text-purple-700">This website is being analyzed for content, security, and insights</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-purple-900">{Math.round(aiState.confidence * 100)}%</div>
-                            <div className="text-xs text-purple-600">Analysis Complete</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Simulated Content */}
-                    <div className="space-y-8">
-                      <div className="prose max-w-none">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Website Content</h2>
-                        <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                          <p className="text-gray-700 mb-4">
-                            This is a simulated view of <strong>{activeTab.url}</strong>. The AI Browser Pro 
-                            successfully loaded and analyzed this website.
-                          </p>
-                          <p className="text-gray-700 mb-4">
-                            In a real implementation, this would show the actual website content with 
-                            AI enhancements like content summarization, link analysis, and privacy protection.
-                          </p>
-                        </div>
-
-                        {/* AI Insights */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="bg-blue-50 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Brain className="w-5 h-5 text-blue-600" />
-                              <h3 className="font-medium text-blue-900">Content Analysis</h3>
-                            </div>
-                            <p className="text-sm text-blue-800">
-                              AI has analyzed the page structure, content quality, and key information.
-                            </p>
-                          </div>
-                          
-                          <div className="bg-green-50 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Shield className="w-5 h-5 text-green-600" />
-                              <h3 className="font-medium text-green-900">Security Check</h3>
-                            </div>
-                            <p className="text-sm text-green-800">
-                              Website security verified. No malicious content detected.
-                            </p>
-                          </div>
-                          
-                          <div className="bg-purple-50 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <FileText className="w-5 h-5 text-purple-600" />
-                              <h3 className="font-medium text-purple-900">Smart Summary</h3>
-                            </div>
-                            <p className="text-sm text-purple-800">
-                              Key points and important information extracted automatically.
-                            </p>
-                          </div>
-                          
-                          <div className="bg-yellow-50 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <Sparkles className="w-5 h-5 text-yellow-600" />
-                              <h3 className="font-medium text-yellow-900">Related Content</h3>
-                            </div>
-                            <p className="text-sm text-yellow-800">
-                              Found 3 related websites and 5 relevant articles.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-8 flex flex-wrap gap-3">
-                      <button 
-                        onClick={() => window.open(activeTab.url, '_blank')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center space-x-2"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>View Original Site</span>
-                      </button>
-                      <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
-                        <Bot className="w-4 h-4" />
-                        <span>AI Summary</span>
-                      </button>
-                      <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors flex items-center space-x-2">
-                        <Star className="w-4 h-4" />
-                        <span>Bookmark</span>
-                      </button>
-                    </div>
+            {loadingState === 'success' && !iframeError && (
+              <div className="h-full relative">
+                {/* Real iframe for website embedding */}
+                <iframe
+                  src={activeTab.url}
+                  className="w-full h-full border-0"
+                  title={activeTab.title}
+                  onError={handleIframeError}
+                  onLoad={() => setLoadingState('success')}
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                
+                {/* AI Enhancement Overlay */}
+                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <Bot className="w-4 h-4 text-purple-600" />
+                    <span className="text-sm font-medium text-gray-900">AI Enhanced</span>
+                    <div className="text-xs text-gray-600">{Math.round(aiState.confidence * 100)}%</div>
                   </div>
                 </div>
               </div>
             )}
 
-            {loadingState === 'blocked' && (
+            {(loadingState === 'blocked' || iframeError) && (
               <div className="h-full flex items-center justify-center bg-white">
                 <div className="text-center max-w-md">
                   <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Embedding Restricted</h3>
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">Website Protection Active</h3>
                   <p className="text-gray-600 mb-6">
-                    This website has security policies that prevent embedding. This is common for 
-                    sites like Google, Facebook, and banking websites.
+                    This website has security policies that prevent embedding (X-Frame-Options). 
+                    This is common for sites like Google, Facebook, and banking websites to prevent clickjacking attacks.
                   </p>
+                  
+                  {/* Website Preview Card */}
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <Globe className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-semibold text-gray-900">{activeTab.title}</h4>
+                        <p className="text-sm text-gray-600">{activeTab.url}</p>
+                      </div>
+                    </div>
+                    
+                    {/* AI Analysis */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Shield className="w-4 h-4 text-green-600" />
+                          <span className="text-xs font-medium text-green-900">Security</span>
+                        </div>
+                        <p className="text-xs text-green-800">Protected</p>
+                      </div>
+                      <div className="bg-white/60 rounded-lg p-3">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Brain className="w-4 h-4 text-purple-600" />
+                          <span className="text-xs font-medium text-purple-900">AI Status</span>
+                        </div>
+                        <p className="text-xs text-purple-800">Analyzing</p>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-3">
                     <button 
                       onClick={() => window.open(activeTab.url, '_blank')}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      <span>Open in New Tab</span>
+                      <span>Open in New Window</span>
                     </button>
                     <button 
                       onClick={handleRetry}
@@ -455,16 +402,43 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
                   
                   {/* Alternative Options */}
                   <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">Alternative Options</h4>
+                    <h4 className="font-medium text-blue-900 mb-2">AI Alternatives</h4>
                     <div className="space-y-2 text-sm">
-                      <button className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors">
-                        → Search for "{activeTab.title}" content
+                      <button 
+                        onClick={() => {
+                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
+                          if (searchInput) {
+                            searchInput.value = `site:${new URL(activeTab.url).hostname} summary`;
+                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+                          }
+                        }}
+                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
+                      >
+                        → Get AI summary of this website
                       </button>
-                      <button className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors">
+                      <button 
+                        onClick={() => {
+                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
+                          if (searchInput) {
+                            searchInput.value = `${activeTab.title} alternative websites`;
+                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+                          }
+                        }}
+                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
+                      >
                         → Find similar websites
                       </button>
-                      <button className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors">
-                        → Get AI summary of this domain
+                      <button 
+                        onClick={() => {
+                          const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
+                          if (searchInput) {
+                            searchInput.value = `${new URL(activeTab.url).hostname} reviews`;
+                            searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+                          }
+                        }}
+                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
+                      >
+                        → Search for reviews and info
                       </button>
                     </div>
                   </div>
@@ -505,9 +479,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
           </span>
           <span className="text-xs opacity-75">• {activeTab.url}</span>
           <div className="ml-auto flex items-center space-x-2">
-            {loadingState === 'success' && (
+            {loadingState === 'success' && !iframeError && (
               <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">
-                ✓ Loaded Successfully
+                ✓ Live Website
               </span>
             )}
             {loadingState === 'loading' && (
@@ -515,9 +489,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
                 ⟳ Loading...
               </span>
             )}
-            {loadingState === 'blocked' && (
+            {(loadingState === 'blocked' || iframeError) && (
               <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
-                ⚠ Embedding Blocked
+                🛡️ Protected
               </span>
             )}
           </div>
