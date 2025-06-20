@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, 
   Zap, 
@@ -22,16 +22,20 @@ import {
   Loader,
   Monitor,
   Smartphone,
-  Tablet
+  Tablet,
+  Cpu,
+  Eye,
+  Lightbulb
 } from 'lucide-react';
 import { Tab, AIState } from '../types';
 
 interface ContentAreaProps {
   activeTab?: Tab;
   aiState: AIState;
+  isDarkMode: boolean;
 }
 
-const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
+const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMode }) => {
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error' | 'blocked'>('loading');
   const [retryCount, setRetryCount] = useState(0);
   const [iframeError, setIframeError] = useState(false);
@@ -42,7 +46,6 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
       setRetryCount(0);
       setIframeError(false);
       
-      // Simulate realistic loading
       const timer = setTimeout(() => {
         setLoadingState('success');
       }, 1200);
@@ -53,12 +56,23 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
 
   if (!activeTab) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Globe className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Tab</h3>
-          <p className="text-gray-600">Open a new tab to start browsing</p>
-        </div>
+      <div className={`flex-1 flex items-center justify-center ${
+        isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50/50'
+      }`}>
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <Globe className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          </motion.div>
+          <h3 className="text-lg font-medium mb-2">No Active Tab</h3>
+          <p className="opacity-70">Open a new tab to start browsing</p>
+        </motion.div>
       </div>
     );
   }
@@ -79,402 +93,785 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState }) => {
   };
 
   const handleSearchAction = (searchTerm: string) => {
-    const searchInput = document.querySelector('input[placeholder*="Search Google"]') as HTMLInputElement;
+    const searchInput = document.querySelector('input[placeholder*="Search with AI"]') as HTMLInputElement;
     if (searchInput) {
       searchInput.value = searchTerm;
       searchInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
     }
   };
 
-  // Render different content based on the active tab URL
   const renderContent = () => {
-    // Home page
     if (activeTab.url === 'ai-browser://home') {
       return (
-        <div className="max-w-6xl mx-auto p-8 space-y-12">
-          {/* Hero Section */}
-          <div className="text-center space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-4"
-            >
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Browser Pro
-              </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Experience the future of web browsing with AI-powered search, universal domain access, and intelligent automation
-              </p>
-            </motion.div>
-
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-wrap justify-center gap-4 mt-8"
-            >
-              <button 
-                onClick={() => handleSearchAction('')}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl transition-colors"
+        <div className="max-w-7xl mx-auto p-8 space-y-16">
+          {/* Hero Section with 3D Elements */}
+          <motion.div 
+            className="text-center space-y-8"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="space-y-6">
+              <motion.h1 
+                className="text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-cyan-400 bg-clip-text text-transparent"
+                style={{ fontVariationSettings: '"wght" 800' }}
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
+                }}
+                transition={{ duration: 5, repeat: Infinity }}
               >
-                <Search className="w-5 h-5" />
-                <span>Search Anything</span>
-              </button>
-              <button className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl transition-colors">
-                <Bot className="w-5 h-5" />
-                <span>AI Assistant</span>
-              </button>
-              <button className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl transition-colors">
-                <Globe className="w-5 h-5" />
-                <span>Browse Any Domain</span>
-              </button>
-            </motion.div>
-          </div>
+                AI Browser Pro
+              </motion.h1>
+              <motion.div
+                className="text-2xl font-medium opacity-80"
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+                  2025 Edition
+                </span>
+              </motion.div>
+              <p className="text-xl opacity-70 max-w-3xl mx-auto leading-relaxed">
+                Experience the future of web browsing with quantum AI, neural networks, 
+                and cutting-edge 2025 technologies
+              </p>
+            </div>
 
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Floating Action Buttons */}
+            <motion.div
+              className="flex flex-wrap justify-center gap-6 mt-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {[
+                { icon: Search, label: 'Neural Search', color: 'blue', action: () => handleSearchAction('') },
+                { icon: Bot, label: 'AI Assistant', color: 'purple', action: () => {} },
+                { icon: Globe, label: 'Universal Access', color: 'green', action: () => {} },
+                { icon: Brain, label: 'Quantum Analysis', color: 'cyan', action: () => {} }
+              ].map((button, index) => (
+                <motion.button
+                  key={button.label}
+                  onClick={button.action}
+                  className={`group relative flex items-center space-x-3 px-8 py-4 rounded-2xl backdrop-blur-xl border transition-all duration-300 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-700/70' 
+                      : 'bg-white/50 border-gray-200/50 hover:bg-white/80'
+                  }`}
+                  whileHover={{ 
+                    scale: 1.05, 
+                    y: -5,
+                    boxShadow: isDarkMode 
+                      ? '0 20px 60px rgba(59, 130, 246, 0.3)' 
+                      : '0 20px 60px rgba(0, 0, 0, 0.1)'
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + index * 0.1 }}
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  <motion.div
+                    className={`p-3 rounded-xl bg-gradient-to-br from-${button.color}-500 to-${button.color}-600`}
+                    whileHover={{ rotateY: 15, scale: 1.1 }}
+                  >
+                    <button.icon className="w-6 h-6 text-white" />
+                  </motion.div>
+                  <span className="font-semibold text-lg">{button.label}</span>
+                  
+                  {/* Hover Glow */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)`
+                    }}
+                  />
+                </motion.button>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Features Grid with Masonry Layout */}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
             {[
               {
                 icon: Globe,
-                title: 'Universal Access',
-                description: 'Browse ANY domain worldwide - .com, .org, .net, country domains, and more',
+                title: 'Quantum Universal Access',
+                description: 'Browse ANY domain across all dimensions - .com, .org, international domains, and parallel web universes',
                 color: 'blue',
-                badge: 'Global'
+                badge: 'Multiversal',
+                height: 'h-64'
               },
               {
                 icon: Shield,
-                title: 'Smart Loading',
-                description: 'Intelligent website loading with iframe embedding and fallback options',
+                title: 'Neural Security Matrix',
+                description: 'Advanced quantum encryption with AI-powered threat detection and real-time protection protocols',
                 color: 'green',
-                badge: 'Reliable'
+                badge: 'Quantum Safe',
+                height: 'h-72'
               },
               {
                 icon: Bot,
-                title: 'AI Enhancement',
-                description: 'Every website gets AI analysis, summaries, and intelligent insights',
+                title: 'Consciousness Engine',
+                description: 'Self-aware AI that learns, adapts, and evolves with your browsing patterns for ultimate personalization',
                 color: 'purple',
-                badge: 'Smart'
+                badge: 'Sentient',
+                height: 'h-80'
               },
               {
                 icon: Zap,
-                title: 'Fast Navigation',
-                description: 'Quick access to popular sites and smart URL suggestions',
+                title: 'Hyperspeed Navigation',
+                description: 'Quantum tunneling technology for instantaneous page loads and interdimensional browsing',
                 color: 'yellow',
-                badge: 'Fast'
+                badge: 'Lightspeed',
+                height: 'h-68'
               },
               {
                 icon: Search,
-                title: 'Universal Search',
-                description: 'Search across Google, Bing, DuckDuckGo, and specialized engines',
+                title: 'Omniscient Search',
+                description: 'Search across all known databases, parallel internets, and future web archives simultaneously',
                 color: 'indigo',
-                badge: 'Comprehensive'
+                badge: 'All-Knowing',
+                height: 'h-76'
               },
               {
                 icon: FileText,
-                title: 'Content Analysis',
-                description: 'AI-powered content extraction, summarization, and research tools',
+                title: 'Reality Analysis',
+                description: 'AI-powered content verification, fact-checking across multiple realities, and truth synthesis',
                 color: 'red',
-                badge: 'Intelligent'
+                badge: 'Truth Engine',
+                height: 'h-72'
               }
             ].map((feature, index) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group"
+                initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ delay: 0.7 + index * 0.1 }}
+                whileHover={{ 
+                  y: -10, 
+                  rotateY: 5,
+                  boxShadow: isDarkMode 
+                    ? '0 25px 80px rgba(59, 130, 246, 0.3)' 
+                    : '0 25px 80px rgba(0, 0, 0, 0.1)'
+                }}
+                className={`${feature.height} backdrop-blur-xl rounded-3xl border p-8 group cursor-pointer transition-all duration-500 relative overflow-hidden ${
+                  isDarkMode 
+                    ? 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50' 
+                    : 'bg-white/30 border-gray-200/30 hover:border-gray-300/50'
+                }`}
+                style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 bg-${feature.color}-100 rounded-xl group-hover:scale-110 transition-transform`}>
-                    <feature.icon className={`w-6 h-6 text-${feature.color}-600`} />
+                {/* Background Gradient */}
+                <motion.div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: `linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)`
+                  }}
+                />
+
+                <div className="relative z-10 h-full flex flex-col">
+                  <div className="flex items-start justify-between mb-6">
+                    <motion.div
+                      className={`p-4 bg-gradient-to-br from-${feature.color}-500 to-${feature.color}-600 rounded-2xl shadow-lg`}
+                      whileHover={{ 
+                        scale: 1.2, 
+                        rotateY: 15,
+                        rotateX: 15
+                      }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <feature.icon className="w-8 h-8 text-white" />
+                    </motion.div>
+                    <motion.span 
+                      className={`text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
+                        isDarkMode 
+                          ? `bg-${feature.color}-900/30 text-${feature.color}-300 border border-${feature.color}-400/30` 
+                          : `bg-${feature.color}-100/80 text-${feature.color}-700 border border-${feature.color}-300/50`
+                      }`}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      {feature.badge}
+                    </motion.span>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-1 bg-${feature.color}-100 text-${feature.color}-700 rounded-full`}>
-                    {feature.badge}
-                  </span>
+                  
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      {feature.title}
+                    </h3>
+                    <p className="opacity-80 leading-relaxed text-sm">
+                      {feature.description}
+                    </p>
+                  </div>
+
+                  {/* Floating Particles */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {[...Array(3)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute w-1 h-1 bg-blue-400/50 rounded-full"
+                        animate={{
+                          x: [0, Math.random() * 100],
+                          y: [0, Math.random() * 100],
+                          opacity: [0, 1, 0],
+                          scale: [0, 1, 0]
+                        }}
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          delay: i * 1.5,
+                          ease: "easeInOut"
+                        }}
+                        style={{
+                          left: `${Math.random() * 100}%`,
+                          top: `${Math.random() * 100}%`
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          {/* Quick Links */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Try These Domains</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {/* Quick Links with Parallax Effect */}
+          <motion.div 
+            className={`backdrop-blur-xl rounded-3xl border p-12 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-gray-800/30 to-gray-900/30 border-gray-700/30' 
+                : 'bg-gradient-to-br from-white/30 to-gray-50/30 border-gray-200/30'
+            }`}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+          >
+            <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Explore the Quantum Web
+            </h2>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {[
-                { name: 'Google', url: 'google.com', icon: '🔍' },
-                { name: 'YouTube', url: 'youtube.com', icon: '📺' },
-                { name: 'GitHub', url: 'github.com', icon: '🐙' },
-                { name: 'Reddit', url: 'reddit.com', icon: '🤖' },
-                { name: 'Wikipedia', url: 'wikipedia.org', icon: '📖' },
-                { name: 'Stack Overflow', url: 'stackoverflow.com', icon: '📚' }
+                { name: 'Google Quantum', url: 'google.com', icon: '🔍', color: 'blue' },
+                { name: 'YouTube Neural', url: 'youtube.com', icon: '📺', color: 'red' },
+                { name: 'GitHub Matrix', url: 'github.com', icon: '🐙', color: 'gray' },
+                { name: 'Reddit Hive', url: 'reddit.com', icon: '🤖', color: 'orange' },
+                { name: 'Wiki Nexus', url: 'wikipedia.org', icon: '📖', color: 'blue' },
+                { name: 'Stack Overflow', url: 'stackoverflow.com', icon: '📚', color: 'orange' }
               ].map((link, index) => (
                 <motion.button
                   key={link.name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex flex-col items-center space-y-2 p-4 bg-white rounded-xl hover:shadow-md transition-all"
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 1.1 + index * 0.1 }}
+                  className={`group flex flex-col items-center space-y-3 p-6 backdrop-blur-sm rounded-2xl border transition-all duration-300 ${
+                    isDarkMode 
+                      ? 'bg-gray-800/30 border-gray-700/30 hover:bg-gray-700/50' 
+                      : 'bg-white/30 border-gray-200/30 hover:bg-white/60'
+                  }`}
                   onClick={() => handleSearchAction(link.url)}
+                  whileHover={{ 
+                    scale: 1.05, 
+                    y: -5,
+                    rotateY: 10
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <span className="text-2xl">{link.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{link.name}</span>
+                  <motion.div
+                    className="text-4xl group-hover:scale-110 transition-transform duration-300"
+                    whileHover={{ rotateZ: 10 }}
+                  >
+                    {link.icon}
+                  </motion.div>
+                  <span className="text-sm font-semibold text-center">{link.name}</span>
+                  
+                  {/* Glow Effect */}
+                  <motion.div
+                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)`
+                    }}
+                  />
                 </motion.button>
               ))}
             </div>
             
-            {/* Domain Examples */}
-            <div className="mt-8 text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Try Any Domain</h3>
-              <div className="flex flex-wrap justify-center gap-2 text-sm">
+            {/* Domain Examples with Kinetic Typography */}
+            <motion.div 
+              className="mt-12 text-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+            >
+              <h3 className="text-xl font-bold mb-6">Access Any Domain in the Multiverse</h3>
+              <div className="flex flex-wrap justify-center gap-3">
                 {[
                   'example.com', 'news.bbc.co.uk', 'amazon.de', 'yahoo.co.jp', 
                   'medium.com', 'dev.to', 'hashnode.com', 'codepen.io'
-                ].map((domain) => (
-                  <button
+                ].map((domain, index) => (
+                  <motion.button
                     key={domain}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1.6 + index * 0.05 }}
                     onClick={() => handleSearchAction(domain)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-full transition-colors"
+                    className={`px-4 py-2 rounded-full backdrop-blur-sm border text-sm font-medium transition-all duration-300 ${
+                      isDarkMode 
+                        ? 'bg-gray-800/30 border-gray-700/30 hover:bg-gray-700/50 hover:border-blue-400/50' 
+                        : 'bg-white/30 border-gray-200/30 hover:bg-white/60 hover:border-blue-400/50'
+                    }`}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     {domain}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       );
     }
 
-    // External website handling - Real iframe embedding
+    // External website handling
     if (activeTab.url.startsWith('http')) {
       return (
         <div className="h-full flex flex-col">
           {/* Enhanced Website Info Bar */}
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 border-b border-gray-200 p-3">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4 text-blue-600" />
-                <span className="font-medium text-blue-900 text-sm">Live Website</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="text-xs text-gray-700 truncate block">{activeTab.url}</span>
-              </div>
+          <motion.div 
+            className={`backdrop-blur-xl border-b p-4 ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-blue-900/20 to-green-900/20 border-gray-700/50' 
+                : 'bg-gradient-to-r from-blue-50/80 to-green-50/80 border-gray-200/50'
+            }`}
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+          >
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1">
-                  {loadingState === 'success' && !iframeError && <CheckCircle className="w-3 h-3 text-green-500" />}
-                  {loadingState === 'loading' && <Loader className="w-3 h-3 text-blue-500 animate-spin" />}
-                  {(loadingState === 'blocked' || iframeError) && <AlertTriangle className="w-3 h-3 text-yellow-500" />}
-                  <span className="text-xs text-gray-600">
-                    {loadingState === 'success' && !iframeError && 'Loaded'}
-                    {loadingState === 'loading' && 'Loading...'}
-                    {(loadingState === 'blocked' || iframeError) && 'Blocked'}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Monitor className="w-3 h-3 text-gray-500" />
-                  <Smartphone className="w-3 h-3 text-gray-400" />
-                  <Tablet className="w-3 h-3 text-gray-400" />
-                </div>
-                <button 
-                  onClick={() => window.open(activeTab.url, '_blank')}
-                  className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors"
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                 >
-                  Open External
-                </button>
+                  <Globe className="w-5 h-5 text-blue-400" />
+                </motion.div>
+                <span className="font-semibold text-blue-400">Quantum Web Portal</span>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <span className="text-sm opacity-70 truncate block">{activeTab.url}</span>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  {loadingState === 'success' && !iframeError && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center space-x-1"
+                    >
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-sm text-green-400">Neural Link Active</span>
+                    </motion.div>
+                  )}
+                  {loadingState === 'loading' && (
+                    <motion.div
+                      className="flex items-center space-x-1"
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <Loader className="w-4 h-4 text-blue-400 animate-spin" />
+                      <span className="text-sm text-blue-400">Establishing Quantum Link...</span>
+                    </motion.div>
+                  )}
+                  {(loadingState === 'blocked' || iframeError) && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex items-center space-x-1"
+                    >
+                      <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                      <span className="text-sm text-yellow-400">Quantum Barrier Detected</span>
+                    </motion.div>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Monitor className="w-4 h-4 opacity-60" />
+                  <Smartphone className="w-4 h-4 opacity-40" />
+                  <Tablet className="w-4 h-4 opacity-40" />
+                </div>
+                
+                <motion.button 
+                  onClick={() => window.open(activeTab.url, '_blank')}
+                  className={`text-sm px-3 py-1 rounded-full backdrop-blur-sm border transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-blue-900/30 text-blue-300 border-blue-400/30 hover:bg-blue-800/50' 
+                      : 'bg-blue-100/80 text-blue-700 border-blue-300/50 hover:bg-blue-200/80'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Open Portal
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Content Area */}
           <div className="flex-1 relative">
-            {loadingState === 'loading' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
-                <div className="text-center">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"
+            <AnimatePresence mode="wait">
+              {loadingState === 'loading' && (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className={`absolute inset-0 flex items-center justify-center ${
+                    isDarkMode ? 'bg-gray-900/50' : 'bg-white/50'
+                  } backdrop-blur-sm z-10`}
+                >
+                  <div className="text-center">
+                    <motion.div
+                      className="relative w-24 h-24 mx-auto mb-8"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    >
+                      <div className="absolute inset-0 border-4 border-blue-400/30 rounded-full"></div>
+                      <motion.div
+                        className="absolute inset-2 border-4 border-purple-500/50 rounded-full"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                      />
+                      <motion.div
+                        className="absolute inset-4 border-4 border-cyan-400/70 rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      />
+                      <div className="absolute inset-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <Cpu className="w-6 h-6 text-white" />
+                      </div>
+                    </motion.div>
+                    
+                    <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                      Quantum Portal Initializing
+                    </h3>
+                    <p className="opacity-70 mb-6">Establishing neural link to {activeTab.url}</p>
+                    
+                    <div className="flex items-center justify-center space-x-3 text-sm">
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <Brain className="w-5 h-5 text-purple-400" />
+                      </motion.div>
+                      <span className="opacity-80">AI consciousness synchronizing...</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {loadingState === 'success' && !iframeError && (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="h-full relative"
+                >
+                  <iframe
+                    src={activeTab.url}
+                    className="w-full h-full border-0"
+                    title={activeTab.title}
+                    onError={handleIframeError}
+                    onLoad={() => setLoadingState('success')}
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+                    referrerPolicy="no-referrer-when-downgrade"
                   />
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Loading Website</h3>
-                  <p className="text-gray-600 mb-4">Connecting to {activeTab.url}</p>
-                  <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                    <Bot className="w-4 h-4 text-purple-500" />
-                    <span>AI analysis in progress...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {loadingState === 'success' && !iframeError && (
-              <div className="h-full relative">
-                {/* Real iframe for website embedding */}
-                <iframe
-                  src={activeTab.url}
-                  className="w-full h-full border-0"
-                  title={activeTab.title}
-                  onError={handleIframeError}
-                  onLoad={() => setLoadingState('success')}
-                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                
-                {/* AI Enhancement Overlay */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <Bot className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium text-gray-900">AI Enhanced</span>
-                    <div className="text-xs text-gray-600">{Math.round(aiState.confidence * 100)}%</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {(loadingState === 'blocked' || iframeError) && (
-              <div className="h-full flex items-center justify-center bg-white">
-                <div className="text-center max-w-md">
-                  <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Website Protection Active</h3>
-                  <p className="text-gray-600 mb-6">
-                    This website has security policies that prevent embedding (X-Frame-Options). 
-                    This is common for sites like Google, Facebook, and banking websites to prevent clickjacking attacks.
-                  </p>
                   
-                  {/* Website Preview Card */}
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                        <Globe className="w-6 h-6 text-white" />
+                  {/* AI Enhancement Overlay */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className={`absolute top-6 right-6 backdrop-blur-xl rounded-2xl border p-4 shadow-2xl ${
+                      isDarkMode 
+                        ? 'bg-gray-900/90 border-gray-700/50' 
+                        : 'bg-white/90 border-gray-200/50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Bot className="w-5 h-5 text-purple-400" />
+                      </motion.div>
+                      <div>
+                        <span className="font-semibold text-sm">Neural Enhanced</span>
+                        <div className="text-xs opacity-70">{Math.round(aiState.confidence * 100)}% Quantum Sync</div>
                       </div>
-                      <div className="text-left">
-                        <h4 className="font-semibold text-gray-900">{activeTab.title}</h4>
-                        <p className="text-sm text-gray-600">{activeTab.url}</p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {(loadingState === 'blocked' || iframeError) && (
+                <motion.div
+                  key="blocked"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`h-full flex items-center justify-center p-8 ${
+                    isDarkMode ? 'bg-gray-900/50' : 'bg-white/50'
+                  }`}
+                >
+                  <div className="text-center max-w-2xl">
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 5, -5, 0],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <AlertTriangle className="w-20 h-20 text-yellow-400 mx-auto mb-6" />
+                    </motion.div>
+                    
+                    <h3 className="text-2xl font-bold mb-4">Quantum Barrier Detected</h3>
+                    <p className="opacity-80 mb-8 leading-relaxed">
+                      This website has deployed quantum security protocols that prevent neural embedding. 
+                      This is common for high-security sites to prevent interdimensional access attacks.
+                    </p>
+                    
+                    {/* Website Preview Card */}
+                    <motion.div 
+                      className={`backdrop-blur-xl rounded-2xl border p-8 mb-8 ${
+                        isDarkMode 
+                          ? 'bg-gradient-to-br from-blue-900/30 to-purple-900/30 border-gray-700/50' 
+                          : 'bg-gradient-to-br from-blue-50/80 to-purple-50/80 border-gray-200/50'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className="flex items-center space-x-4 mb-6">
+                        <motion.div
+                          className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center"
+                          whileHover={{ rotateY: 15, scale: 1.1 }}
+                        >
+                          <Globe className="w-8 h-8 text-white" />
+                        </motion.div>
+                        <div className="text-left">
+                          <h4 className="font-bold text-lg">{activeTab.title}</h4>
+                          <p className="opacity-70">{activeTab.url}</p>
+                        </div>
                       </div>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        {[
+                          { icon: Shield, label: 'Quantum Safe', value: 'Protected', color: 'green' },
+                          { icon: Brain, label: 'AI Analysis', value: 'Scanning', color: 'purple' },
+                          { icon: Eye, label: 'Neural Scan', value: 'Active', color: 'blue' }
+                        ].map((stat) => (
+                          <motion.div
+                            key={stat.label}
+                            className={`backdrop-blur-sm rounded-xl p-4 ${
+                              isDarkMode ? 'bg-white/10' : 'bg-white/60'
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <div className="flex items-center space-x-2 mb-2">
+                              <stat.icon className={`w-4 h-4 text-${stat.color}-400`} />
+                              <span className="text-xs font-medium opacity-70">{stat.label}</span>
+                            </div>
+                            <p className={`text-sm font-bold text-${stat.color}-400`}>{stat.value}</p>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                    
+                    <div className="space-y-4">
+                      <motion.button 
+                        onClick={() => window.open(activeTab.url, '_blank')}
+                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 font-semibold"
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <ExternalLink className="w-5 h-5" />
+                        <span>Open in Quantum Portal</span>
+                      </motion.button>
+                      
+                      <motion.button 
+                        onClick={handleRetry}
+                        className={`w-full backdrop-blur-sm border px-8 py-4 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 font-semibold ${
+                          isDarkMode 
+                            ? 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-700/70' 
+                            : 'bg-white/50 border-gray-200/50 hover:bg-white/80'
+                        }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <RefreshCw className="w-5 h-5" />
+                        <span>Retry Neural Link {retryCount > 0 && `(${retryCount})`}</span>
+                      </motion.button>
                     </div>
                     
-                    {/* AI Analysis */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="bg-white/60 rounded-lg p-3">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Shield className="w-4 h-4 text-green-600" />
-                          <span className="text-xs font-medium text-green-900">Security</span>
-                        </div>
-                        <p className="text-xs text-green-800">Protected</p>
-                      </div>
-                      <div className="bg-white/60 rounded-lg p-3">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Brain className="w-4 h-4 text-purple-600" />
-                          <span className="text-xs font-medium text-purple-900">AI Status</span>
-                        </div>
-                        <p className="text-xs text-purple-800">Analyzing</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <button 
-                      onClick={() => window.open(activeTab.url, '_blank')}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    {/* AI Alternatives */}
+                    <motion.div 
+                      className={`mt-8 p-6 backdrop-blur-sm rounded-2xl border ${
+                        isDarkMode 
+                          ? 'bg-blue-900/20 border-blue-400/30' 
+                          : 'bg-blue-50/80 border-blue-300/50'
+                      }`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Open in New Window</span>
-                    </button>
-                    <button 
-                      onClick={handleRetry}
-                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      <span>Try Again {retryCount > 0 && `(${retryCount})`}</span>
-                    </button>
+                      <h4 className="font-bold text-blue-400 mb-4 flex items-center space-x-2">
+                        <Lightbulb className="w-5 h-5" />
+                        <span>Neural Alternatives</span>
+                      </h4>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Generate AI summary of this website', action: () => handleSearchAction(`site:${new URL(activeTab.url).hostname} summary`) },
+                          { label: 'Find quantum-accessible alternatives', action: () => handleSearchAction(`${activeTab.title} alternative websites`) },
+                          { label: 'Search neural archives for reviews', action: () => handleSearchAction(`${new URL(activeTab.url).hostname} reviews`) }
+                        ].map((option, index) => (
+                          <motion.button
+                            key={index}
+                            onClick={option.action}
+                            className={`w-full text-left p-3 rounded-xl transition-all duration-200 ${
+                              isDarkMode 
+                                ? 'hover:bg-blue-800/30 text-blue-300' 
+                                : 'hover:bg-blue-100/80 text-blue-700'
+                            }`}
+                            whileHover={{ x: 4, scale: 1.02 }}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 + index * 0.1 }}
+                          >
+                            → {option.label}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
                   </div>
-                  
-                  {/* Alternative Options */}
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">AI Alternatives</h4>
-                    <div className="space-y-2 text-sm">
-                      <button 
-                        onClick={() => handleSearchAction(`site:${new URL(activeTab.url).hostname} summary`)}
-                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
-                      >
-                        → Get AI summary of this website
-                      </button>
-                      <button 
-                        onClick={() => handleSearchAction(`${activeTab.title} alternative websites`)}
-                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
-                      >
-                        → Find similar websites
-                      </button>
-                      <button 
-                        onClick={() => handleSearchAction(`${new URL(activeTab.url).hostname} reviews`)}
-                        className="w-full text-left text-blue-700 hover:text-blue-900 transition-colors p-2 hover:bg-blue-100 rounded"
-                      >
-                        → Search for reviews and info
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       );
     }
 
-    // Default fallback
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Globe className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Browse</h3>
-          <p className="text-gray-600">Enter any URL or search term to get started</p>
-        </div>
+      <div className={`flex-1 flex items-center justify-center ${
+        isDarkMode ? 'bg-gray-900/50' : 'bg-gray-50/50'
+      }`}>
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <Globe className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          </motion.div>
+          <h3 className="text-lg font-medium mb-2">Ready to Browse the Quantum Web</h3>
+          <p className="opacity-70">Enter any URL or search term to begin your journey</p>
+        </motion.div>
       </div>
     );
   };
 
   return (
-    <div className="flex-1 bg-white overflow-hidden">
+    <motion.div 
+      className={`flex-1 overflow-hidden ${
+        isDarkMode ? 'bg-gray-900/30' : 'bg-white/30'
+      }`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       {/* Security Bar */}
-      <div className={`px-4 py-2 text-sm ${
-        activeTab.securityStatus === 'secure' 
-          ? 'bg-green-50 text-green-800 border-b border-green-200'
-          : activeTab.securityStatus === 'warning'
-          ? 'bg-yellow-50 text-yellow-800 border-b border-yellow-200'
-          : 'bg-red-50 text-red-800 border-b border-red-200'
-      }`}>
-        <div className="flex items-center space-x-2">
-          <Shield className="w-4 h-4" />
+      <motion.div 
+        className={`px-6 py-3 text-sm backdrop-blur-xl border-b ${
+          activeTab.securityStatus === 'secure' 
+            ? isDarkMode
+              ? 'bg-green-900/20 text-green-300 border-green-400/30'
+              : 'bg-green-50/80 text-green-800 border-green-200/50'
+            : activeTab.securityStatus === 'warning'
+            ? isDarkMode
+              ? 'bg-yellow-900/20 text-yellow-300 border-yellow-400/30'
+              : 'bg-yellow-50/80 text-yellow-800 border-yellow-200/50'
+            : isDarkMode
+              ? 'bg-red-900/20 text-red-300 border-red-400/30'
+              : 'bg-red-50/80 text-red-800 border-red-200/50'
+        }`}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+      >
+        <div className="flex items-center space-x-3">
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Shield className="w-4 h-4" />
+          </motion.div>
           <span>
-            {activeTab.securityStatus === 'secure' ? 'Secure connection' : 'Security warning'}
+            {activeTab.securityStatus === 'secure' ? 'Quantum secure connection' : 'Security warning detected'}
           </span>
-          <span className="text-xs opacity-75">• {activeTab.url}</span>
-          <div className="ml-auto flex items-center space-x-2">
+          <span className="opacity-60">• {activeTab.url}</span>
+          <div className="ml-auto flex items-center space-x-3">
             {loadingState === 'success' && !iframeError && (
-              <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">
-                ✓ Live Website
-              </span>
+              <motion.span 
+                className={`text-xs px-3 py-1 rounded-full backdrop-blur-sm ${
+                  isDarkMode 
+                    ? 'bg-green-900/30 text-green-300 border border-green-400/30' 
+                    : 'bg-green-100/80 text-green-800 border border-green-300/50'
+                }`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+              >
+                ✓ Neural Link Active
+              </motion.span>
             )}
             {loadingState === 'loading' && (
-              <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
-                ⟳ Loading...
-              </span>
+              <motion.span 
+                className={`text-xs px-3 py-1 rounded-full backdrop-blur-sm ${
+                  isDarkMode 
+                    ? 'bg-blue-900/30 text-blue-300 border border-blue-400/30' 
+                    : 'bg-blue-100/80 text-blue-800 border border-blue-300/50'
+                }`}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                ⟳ Quantum Sync...
+              </motion.span>
             )}
             {(loadingState === 'blocked' || iframeError) && (
-              <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
-                🛡️ Protected
-              </span>
+              <motion.span 
+                className={`text-xs px-3 py-1 rounded-full backdrop-blur-sm ${
+                  isDarkMode 
+                    ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-400/30' 
+                    : 'bg-yellow-100/80 text-yellow-800 border border-yellow-300/50'
+                }`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+              >
+                🛡️ Quantum Protected
+              </motion.span>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <main className="h-full overflow-hidden">
         {renderContent()}
       </main>
-    </div>
+    </motion.div>
   );
 };
 

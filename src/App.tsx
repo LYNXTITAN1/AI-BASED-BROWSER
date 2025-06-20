@@ -5,7 +5,8 @@ import NavigationBar from './components/NavigationBar';
 import TabManager from './components/TabManager';
 import AIAssistant from './components/AIAssistant';
 import ContentArea from './components/ContentArea';
-import Sidebar from './components/Sidebar';
+import FloatingAIButton from './components/FloatingAIButton';
+import OnboardingTooltips from './components/OnboardingTooltips';
 import { Tab, AIState } from './types';
 
 function App() {
@@ -25,11 +26,20 @@ function App() {
     isActive: true,
     currentTask: 'Ready to browse any domain worldwide',
     confidence: 0.94,
-    suggestions: ['Search with Google', 'Visit any .com domain', 'Explore international sites']
+    suggestions: ['Search with AI', 'Analyze content', 'Smart bookmarks', 'Voice commands']
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Dynamic theming based on time of day
+  useEffect(() => {
+    const hour = new Date().getHours();
+    const isNightTime = hour < 6 || hour > 18;
+    setIsDarkMode(isNightTime);
+  }, []);
 
   const addTab = (url: string, title: string) => {
     const newTab: Tab = {
@@ -43,7 +53,6 @@ function App() {
     
     setTabs(prev => prev.map(tab => ({ ...tab, isActive: false })).concat({ ...newTab, isActive: true }));
     
-    // Update AI state for new tab
     setAiState(prev => ({
       ...prev,
       currentTask: `Analyzing new page: ${title}`,
@@ -55,7 +64,6 @@ function App() {
     setTabs(prev => {
       const filtered = prev.filter(tab => tab.id !== tabId);
       if (filtered.length === 0) {
-        // If no tabs left, create a new home tab
         return [{
           id: Date.now().toString(),
           title: 'AI Browser Pro - Home',
@@ -88,29 +96,35 @@ function App() {
   };
 
   const getTabFavicon = (url: string): string => {
-    // Enhanced favicon detection for worldwide domains
     const domain = url.toLowerCase();
     
-    // Popular sites
-    if (domain.includes('google.com')) return '🔍';
-    if (domain.includes('youtube.com')) return '📺';
-    if (domain.includes('github.com')) return '🐙';
-    if (domain.includes('stackoverflow.com')) return '📚';
-    if (domain.includes('reddit.com')) return '🤖';
-    if (domain.includes('twitter.com') || domain.includes('x.com')) return '🐦';
-    if (domain.includes('linkedin.com')) return '💼';
-    if (domain.includes('facebook.com')) return '📘';
-    if (domain.includes('instagram.com')) return '📷';
-    if (domain.includes('tiktok.com')) return '🎵';
-    if (domain.includes('netflix.com')) return '🎬';
-    if (domain.includes('spotify.com')) return '🎧';
-    if (domain.includes('amazon.com')) return '📦';
-    if (domain.includes('ebay.com')) return '🛒';
-    if (domain.includes('wikipedia.org')) return '📖';
-    if (domain.includes('medium.com')) return '✍️';
-    if (domain.includes('duckduckgo.com')) return '🦆';
+    const favicons = {
+      'google.com': '🔍',
+      'youtube.com': '📺',
+      'github.com': '🐙',
+      'stackoverflow.com': '📚',
+      'reddit.com': '🤖',
+      'twitter.com': '🐦',
+      'x.com': '🐦',
+      'linkedin.com': '💼',
+      'facebook.com': '📘',
+      'instagram.com': '📷',
+      'tiktok.com': '🎵',
+      'netflix.com': '🎬',
+      'spotify.com': '🎧',
+      'amazon.com': '📦',
+      'ebay.com': '🛒',
+      'wikipedia.org': '📖',
+      'medium.com': '✍️',
+      'duckduckgo.com': '🦆',
+      'gmail.com': '📧',
+      'drive.google.com': '💾'
+    };
     
-    // Country-specific domains
+    for (const [domainKey, favicon] of Object.entries(favicons)) {
+      if (domain.includes(domainKey)) return favicon;
+    }
+    
     if (domain.includes('.co.uk')) return '🇬🇧';
     if (domain.includes('.de')) return '🇩🇪';
     if (domain.includes('.fr')) return '🇫🇷';
@@ -127,7 +141,6 @@ function App() {
     if (domain.includes('.it')) return '🇮🇹';
     if (domain.includes('.nl')) return '🇳🇱';
     
-    // TLD-based icons
     if (domain.includes('.edu')) return '🎓';
     if (domain.includes('.gov')) return '🏛️';
     if (domain.includes('.org')) return '🌍';
@@ -142,33 +155,24 @@ function App() {
     if (domain.includes('.shop')) return '🛍️';
     if (domain.includes('.store')) return '🏪';
     
-    // Special cases
     if (domain.includes('ai-browser://home')) return '🏠';
     if (domain.includes('localhost')) return '🏠';
     if (/^\d+\.\d+\.\d+\.\d+/.test(domain)) return '🖥️';
     
-    // Default based on TLD
-    if (domain.includes('.com')) return '🌐';
-    if (domain.includes('.net')) return '🌐';
+    if (domain.includes('.com') || domain.includes('.net')) return '🌐';
     
     return '🔗';
   };
 
   const getDomainTitle = (url: string): string => {
     try {
-      // Handle special cases
       if (url === 'ai-browser://home') return 'AI Browser Pro - Home';
       if (url.includes('google.com')) return 'Google Search';
       if (url.includes('youtube.com')) return 'YouTube';
       
-      // Extract domain from URL
       const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
       const hostname = urlObj.hostname;
-      
-      // Remove www. prefix
       const domain = hostname.replace(/^www\./, '');
-      
-      // Capitalize first letter and remove TLD for title
       const domainParts = domain.split('.');
       const mainDomain = domainParts[0];
       
@@ -229,118 +233,142 @@ function App() {
     }
   };
 
-  // Update AI state based on current tab
-  useEffect(() => {
-    const activeTab = tabs.find(tab => tab.isActive);
-    if (activeTab) {
-      if (activeTab.url.includes('google.com')) {
-        setAiState(prev => ({
-          ...prev,
-          currentTask: 'Google search active - AI enhanced results',
-          confidence: 0.96,
-          suggestions: [
-            'Refine search with AI',
-            'Get instant answers',
-            'Find related topics',
-            'Smart search suggestions'
-          ]
-        }));
-      } else if (activeTab.url.includes('youtube.com')) {
-        setAiState(prev => ({
-          ...prev,
-          currentTask: 'YouTube enhanced - AI video analysis active',
-          confidence: 0.94,
-          suggestions: [
-            'Summarize video content',
-            'Find related videos',
-            'Extract key insights',
-            'Privacy-protected viewing'
-          ]
-        }));
-      } else if (activeTab.url.startsWith('https://')) {
-        setAiState(prev => ({
-          ...prev,
-          currentTask: `Analyzing secure connection to ${getDomainTitle(activeTab.url)}`,
-          confidence: 0.93,
-          suggestions: [
-            'Analyze page content',
-            'Extract key insights',
-            'Check domain reputation',
-            'Monitor for threats'
-          ]
-        }));
-      }
-    }
-  }, [tabs]);
-
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* Browser Chrome */}
-      <BrowserHeader />
+    <div className={`h-screen flex flex-col overflow-hidden transition-all duration-500 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-black' 
+        : 'bg-gradient-to-br from-gray-50 via-white to-blue-50'
+    }`}>
+      {/* Glassmorphism Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -100, 0],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -100, 0],
+            y: [0, 100, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-full blur-3xl"
+        />
+      </div>
+
+      {/* Browser Chrome with Glassmorphism */}
+      <motion.div
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="relative z-10"
+      >
+        <BrowserHeader isDarkMode={isDarkMode} onToggleTheme={() => setIsDarkMode(!isDarkMode)} />
+      </motion.div>
       
-      {/* Navigation and Tab Bar */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      {/* Navigation and Tab Bar with Progressive Blur */}
+      <motion.div
+        initial={{ y: -30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className={`relative z-10 backdrop-blur-xl border-b ${
+          isDarkMode 
+            ? 'bg-gray-900/80 border-gray-700/50' 
+            : 'bg-white/80 border-gray-200/50'
+        }`}
+      >
         <TabManager 
           tabs={tabs}
           onAddTab={addTab}
           onCloseTab={closeTab}
           onSetActiveTab={setActiveTab}
+          isDarkMode={isDarkMode}
         />
         <NavigationBar 
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           aiState={aiState}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleAISidebar={() => setAiSidebarOpen(!aiSidebarOpen)}
           onNavigateHome={handleNavigateHome}
           onNavigateToUrl={handleNavigateToUrl}
+          isDarkMode={isDarkMode}
         />
-      </div>
+      </motion.div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
+      {/* Main Content Area with 3D Transform */}
+      <div className="flex-1 flex overflow-hidden relative z-10">
+        {/* Content Area */}
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex-1 relative"
+          style={{
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          <ContentArea 
+            activeTab={tabs.find(tab => tab.isActive)}
+            aiState={aiState}
+            isDarkMode={isDarkMode}
+          />
+        </motion.div>
+        
+        {/* AI Assistant Sidebar with Slide Animation */}
         <AnimatePresence>
-          {sidebarOpen && (
+          {aiSidebarOpen && (
             <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: 320 }}
-              exit={{ width: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="bg-white border-r border-gray-200 overflow-hidden"
+              initial={{ x: 400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 400, opacity: 0 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 300, 
+                damping: 30 
+              }}
+              className={`w-96 backdrop-blur-xl border-l ${
+                isDarkMode 
+                  ? 'bg-gray-900/90 border-gray-700/50' 
+                  : 'bg-white/90 border-gray-200/50'
+              }`}
             >
-              <Sidebar 
-                tabs={tabs}
+              <AIAssistant 
                 aiState={aiState}
-                onClose={() => setSidebarOpen(false)}
+                onUpdateState={setAiState}
+                searchQuery={searchQuery}
+                onClose={() => setAiSidebarOpen(false)}
+                isDarkMode={isDarkMode}
               />
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Content and AI Assistant */}
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 relative">
-            <ContentArea 
-              activeTab={tabs.find(tab => tab.isActive)}
-              aiState={aiState}
-            />
-          </div>
-          
-          {/* AI Assistant Panel */}
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: aiState.isActive ? 360 : 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="bg-white border-l border-gray-200 overflow-hidden"
-          >
-            <AIAssistant 
-              aiState={aiState}
-              onUpdateState={setAiState}
-              searchQuery={searchQuery}
-            />
-          </motion.div>
-        </div>
       </div>
+
+      {/* Floating AI Button */}
+      <FloatingAIButton 
+        onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
+        isActive={aiSidebarOpen}
+        aiState={aiState}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Onboarding Tooltips */}
+      {showOnboarding && (
+        <OnboardingTooltips 
+          onComplete={() => setShowOnboarding(false)}
+          isDarkMode={isDarkMode}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -13,7 +13,10 @@ import {
   Menu,
   Star,
   Globe,
-  Zap
+  Zap,
+  Sparkles,
+  Brain,
+  Eye
 } from 'lucide-react';
 import { AIState } from '../types';
 
@@ -21,37 +24,34 @@ interface NavigationBarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   aiState: AIState;
-  onToggleSidebar: () => void;
+  onToggleAISidebar: () => void;
   onNavigateHome: () => void;
   onNavigateToUrl: (url: string) => void;
+  isDarkMode: boolean;
 }
 
 const NavigationBar: React.FC<NavigationBarProps> = ({
   searchQuery,
   onSearchChange,
   aiState,
-  onToggleSidebar,
+  onToggleAISidebar,
   onNavigateHome,
-  onNavigateToUrl
+  onNavigateToUrl,
+  isDarkMode
 }) => {
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-
-  const handleVoiceSearch = () => {
-    setIsVoiceActive(!isVoiceActive);
-    // Voice search logic would go here
-  };
+  const [isTyping, setIsTyping] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const isUrl = (text: string) => {
     const trimmedText = text.trim().toLowerCase();
     
-    // Direct URL patterns
     if (trimmedText.startsWith('http://') || trimmedText.startsWith('https://')) {
       return true;
     }
     
-    // Popular domains without protocol
     const popularDomains = [
       'youtube.com', 'youtu.be', 'google.com', 'github.com', 'stackoverflow.com',
       'reddit.com', 'twitter.com', 'x.com', 'linkedin.com', 'facebook.com',
@@ -60,32 +60,23 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       'news.ycombinator.com', 'dev.to', 'hashnode.com', 'codepen.io', 'codesandbox.io'
     ];
     
-    // Check if it's a popular domain
     if (popularDomains.some(domain => trimmedText === domain || trimmedText.startsWith(domain + '/'))) {
       return true;
     }
     
-    // Enhanced domain patterns - supports ALL TLDs and subdomains
     const domainPatterns = [
-      // Standard domains
       /^[\w\.-]+\.[\w]{2,}$/,
       /^[\w\.-]+\.[\w]{2,}\/.*$/,
-      // Subdomains
       /^[\w\.-]+\.[\w\.-]+\.[\w]{2,}$/,
       /^[\w\.-]+\.[\w\.-]+\.[\w]{2,}\/.*$/,
-      // IP addresses
       /^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/,
       /^(\d{1,3}\.){3}\d{1,3}(:\d+)?\/.*$/,
-      // Localhost
       /^localhost(:\d+)?$/,
       /^localhost(:\d+)?\/.*$/,
-      // Special cases
       /^youtu\.be\/[\w-]+$/,
       /^(www\.)?youtube\.com\/.*$/,
-      // International domains
       /^[\w\.-]+\.(co\.uk|com\.au|co\.jp|co\.kr|com\.br|co\.in|com\.mx|co\.za)$/,
       /^[\w\.-]+\.(de|fr|it|es|nl|se|no|dk|fi|pl|cz|hu|ro|bg|hr|si|sk|lt|lv|ee)$/,
-      // New TLDs
       /^[\w\.-]+\.(io|ai|app|dev|tech|blog|news|shop|store|online|site|website|cloud|digital)$/
     ];
     
@@ -95,17 +86,14 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   const formatUrl = (input: string) => {
     const trimmed = input.trim();
     
-    // If already has protocol, return as is
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
     }
     
-    // For localhost or IP addresses, use http
     if (trimmed.startsWith('localhost') || /^(\d{1,3}\.){3}\d{1,3}/.test(trimmed)) {
       return `http://${trimmed}`;
     }
     
-    // For all other domains, use https
     return `https://${trimmed}`;
   };
 
@@ -113,11 +101,9 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     if (!query.trim()) return;
 
     if (isUrl(query)) {
-      // Handle direct URL navigation
       const url = formatUrl(query);
       onNavigateToUrl(url);
     } else {
-      // Use Google search
       const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       onNavigateToUrl(searchUrl);
     }
@@ -135,7 +121,6 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     const suggestions = [];
     const lowerValue = value.toLowerCase();
     
-    // Direct domain suggestions for popular sites
     const popularSites = [
       { domain: 'youtube.com', trigger: ['youtube', 'video', 'watch'] },
       { domain: 'github.com', trigger: ['github', 'git', 'code', 'repo'] },
@@ -155,20 +140,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       { domain: 'news.ycombinator.com', trigger: ['hacker news', 'hn', 'tech news'] }
     ];
 
-    // Check for popular site matches
     popularSites.forEach(site => {
       if (site.trigger.some(trigger => lowerValue.includes(trigger))) {
         suggestions.push(site.domain);
       }
     });
 
-    // If it looks like a partial domain, suggest completions
     if (lowerValue.length > 2 && !lowerValue.includes(' ')) {
       const commonTlds = ['com', 'org', 'net', 'edu', 'gov', 'io', 'ai', 'co', 'app', 'dev'];
       const internationalTlds = ['co.uk', 'com.au', 'de', 'fr', 'jp', 'cn', 'in', 'br'];
       
       if (!value.includes('.')) {
-        // Suggest adding TLDs
         commonTlds.forEach(tld => {
           suggestions.push(`${value}.${tld}`);
         });
@@ -178,13 +160,11 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       }
     }
 
-    // AI-powered suggestions
     if (lowerValue.length > 3) {
       suggestions.push(`AI Summary: ${value}`);
       suggestions.push(`Research: ${value}`);
     }
 
-    // Search variations
     if (!isUrl(value)) {
       suggestions.push(`${value} tutorial`);
       suggestions.push(`${value} reviews`);
@@ -192,13 +172,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       suggestions.push(`${value} site:reddit.com`);
     }
 
-    // Remove duplicates and limit
     return [...new Set(suggestions)].slice(0, 8);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onSearchChange(value);
+    setIsTyping(true);
     
     if (value.length > 1) {
       const smartSuggestions = generateSmartSuggestions(value);
@@ -206,6 +186,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     } else {
       setSuggestions([]);
     }
+
+    setTimeout(() => setIsTyping(false), 500);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -227,7 +209,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
   const getSuggestionIcon = (suggestion: string) => {
     if (suggestion.startsWith('AI Summary:')) return <Bot className="w-4 h-4 text-blue-500" />;
-    if (suggestion.startsWith('Research:')) return <Bot className="w-4 h-4 text-purple-500" />;
+    if (suggestion.startsWith('Research:')) return <Brain className="w-4 h-4 text-purple-500" />;
     if (suggestion.includes('youtube.com') || suggestion.includes('youtu.be')) return <span className="text-sm">📺</span>;
     if (suggestion.includes('google.com') || suggestion.includes('gmail.com')) return <span className="text-sm">🔍</span>;
     if (suggestion.includes('github.com')) return <span className="text-sm">🐙</span>;
@@ -267,154 +249,316 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-3 px-4 py-3 bg-white">
-      {/* Navigation Controls */}
+    <motion.div
+      className="flex items-center space-x-4 px-6 py-4"
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.1 }}
+    >
+      {/* Navigation Controls with 3D Effects */}
       <div className="flex items-center space-x-1">
-        <button 
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          onClick={() => window.history.back()}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          onClick={() => window.history.forward()}
-        >
-          <ArrowRight className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          onClick={() => window.location.reload()}
-        >
-          <RotateCcw className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          onClick={onNavigateHome}
-        >
-          <Home className="w-4 h-4" />
-        </button>
+        {[
+          { icon: ArrowLeft, action: () => window.history.back() },
+          { icon: ArrowRight, action: () => window.history.forward() },
+          { icon: RotateCcw, action: () => window.location.reload() },
+          { icon: Home, action: onNavigateHome }
+        ].map((button, index) => (
+          <motion.button
+            key={index}
+            whileHover={{ 
+              scale: 1.1, 
+              rotateY: 10,
+              boxShadow: isDarkMode 
+                ? '0 8px 32px rgba(59, 130, 246, 0.3)' 
+                : '0 8px 32px rgba(0, 0, 0, 0.1)'
+            }}
+            whileTap={{ scale: 0.95 }}
+            onClick={button.action}
+            className={`p-3 rounded-xl transition-all duration-200 backdrop-blur-sm ${
+              isDarkMode 
+                ? 'bg-gray-800/50 hover:bg-gray-700/70 border border-gray-700/50' 
+                : 'bg-white/50 hover:bg-white/80 border border-gray-200/50'
+            }`}
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            <button.icon className="w-4 h-4" />
+          </motion.button>
+        ))}
       </div>
 
-      {/* Universal Search Bar */}
+      {/* Intelligent Omnibox with Advanced Glassmorphism */}
       <div className="flex-1 relative">
         <motion.div
           animate={{
             scale: searchFocused ? 1.02 : 1,
             boxShadow: searchFocused 
-              ? '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-              : '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+              ? isDarkMode
+                ? '0 20px 60px rgba(59, 130, 246, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.5)'
+                : '0 20px 60px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.3)'
+              : isDarkMode
+                ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+                : '0 8px 32px rgba(0, 0, 0, 0.1)'
           }}
-          className="relative bg-gray-50 rounded-xl border border-gray-200 overflow-hidden"
+          className={`relative backdrop-blur-xl rounded-2xl border overflow-hidden ${
+            isDarkMode 
+              ? 'bg-gray-800/50 border-gray-700/50' 
+              : 'bg-white/70 border-gray-200/50'
+          }`}
         >
-          {/* AI Status Indicator */}
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-            <Shield className="w-4 h-4 text-green-500" />
-            <Globe className="w-4 h-4 text-blue-500" />
+          {/* AI Status Indicators with Floating Animation */}
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-3">
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Shield className="w-4 h-4 text-green-400" />
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, -2, 0] }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+            >
+              <Globe className="w-4 h-4 text-blue-400" />
+            </motion.div>
             {aiState.isActive && (
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                animate={{ 
+                  rotate: 360,
+                  y: [0, -2, 0]
+                }}
+                transition={{ 
+                  rotate: { duration: 3, repeat: Infinity, ease: 'linear' },
+                  y: { duration: 2, repeat: Infinity, delay: 0.6 }
+                }}
               >
-                <Bot className="w-4 h-4 text-purple-500" />
+                <Bot className="w-4 h-4 text-purple-400" />
               </motion.div>
             )}
           </div>
 
-          {/* Search Input */}
+          {/* Search Input with Variable Typography */}
           <input
+            ref={inputRef}
             type="text"
             value={searchQuery}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-            placeholder="Search Google, visit any domain, or enter URL..."
-            className="w-full pl-24 pr-20 py-3 bg-transparent text-gray-900 placeholder-gray-500 focus:outline-none"
+            placeholder="Search with AI, visit any domain, or enter URL..."
+            className={`w-full pl-28 pr-24 py-4 bg-transparent text-lg font-medium placeholder-opacity-60 focus:outline-none transition-all duration-300 ${
+              isDarkMode 
+                ? 'text-white placeholder-gray-400' 
+                : 'text-gray-900 placeholder-gray-500'
+            } ${searchFocused ? 'text-xl' : ''}`}
+            style={{
+              fontVariationSettings: searchFocused ? '"wght" 500' : '"wght" 400'
+            }}
           />
 
-          {/* Search Actions */}
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-            <button 
-              onClick={handleVoiceSearch}
-              className={`p-1.5 rounded-lg transition-colors ${
+          {/* Search Actions with Micro-interactions */}
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+            <motion.button 
+              whileHover={{ scale: 1.1, rotateZ: 5 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsVoiceActive(!isVoiceActive)}
+              className={`p-2 rounded-xl transition-all duration-200 ${
                 isVoiceActive 
-                  ? 'bg-red-100 text-red-600' 
-                  : 'hover:bg-gray-200 text-gray-600'
+                  ? 'bg-red-500/20 text-red-400 border border-red-400/30' 
+                  : isDarkMode
+                    ? 'hover:bg-gray-700/50 text-gray-400'
+                    : 'hover:bg-gray-200/50 text-gray-600'
               }`}
             >
               <Mic className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors text-gray-600">
+            </motion.button>
+            
+            <motion.button 
+              whileHover={{ scale: 1.1, rotateZ: -5 }}
+              whileTap={{ scale: 0.95 }}
+              className={`p-2 rounded-xl transition-all duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700/50 text-gray-400' 
+                  : 'hover:bg-gray-200/50 text-gray-600'
+              }`}
+            >
               <Camera className="w-4 h-4" />
-            </button>
-            <button 
+            </motion.button>
+            
+            <motion.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleSearch()}
-              className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors text-gray-600"
+              className={`p-2 rounded-xl transition-all duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-blue-600/20 text-blue-400 border border-blue-400/30' 
+                  : 'hover:bg-blue-100/80 text-blue-600 border border-blue-300/50'
+              }`}
             >
               <Search className="w-4 h-4" />
-            </button>
+            </motion.button>
           </div>
 
-          {/* AI Confidence Indicator */}
+          {/* AI Confidence Indicator with Gradient Animation */}
           {aiState.confidence > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/20 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${aiState.confidence * 100}%` }}
-                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"
+                className="h-full bg-gradient-to-r from-blue-400 via-purple-500 to-green-400"
+                style={{
+                  backgroundSize: '200% 100%',
+                }}
+              />
+              <motion.div
+                animate={{ x: ['-100%', '100%'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
               />
             </div>
           )}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute top-2 right-2"
+            >
+              <div className="flex space-x-1">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ 
+                      duration: 0.6, 
+                      repeat: Infinity, 
+                      delay: i * 0.1 
+                    }}
+                    className="w-1 h-1 bg-blue-400 rounded-full"
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Enhanced Search Suggestions */}
-        {searchFocused && suggestions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 p-2 z-50 max-h-96 overflow-y-auto"
-          >
-            <div className="space-y-1">
-              <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
-                Smart Suggestions
-              </div>
-              {suggestions.map((suggestion, index) => (
-                <div 
-                  key={index}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer group"
-                >
-                  {getSuggestionIcon(suggestion)}
-                  <span className="text-sm flex-1 group-hover:text-gray-900">{suggestion}</span>
-                  {getSuggestionBadge(suggestion) && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                      {getSuggestionBadge(suggestion)}
-                    </span>
-                  )}
-                  {isUrl(suggestion) && (
-                    <Zap className="w-3 h-3 text-green-500" />
-                  )}
+        {/* Enhanced Search Suggestions with Card-based Interface */}
+        <AnimatePresence>
+          {searchFocused && suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className={`absolute top-full left-0 right-0 mt-3 backdrop-blur-xl rounded-2xl border shadow-2xl p-3 z-50 max-h-96 overflow-y-auto ${
+                isDarkMode 
+                  ? 'bg-gray-800/90 border-gray-700/50' 
+                  : 'bg-white/90 border-gray-200/50'
+              }`}
+            >
+              <div className="space-y-2">
+                <div className={`px-4 py-2 text-xs font-medium uppercase tracking-wide border-b ${
+                  isDarkMode 
+                    ? 'text-gray-400 border-gray-700/50' 
+                    : 'text-gray-500 border-gray-200/50'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-3 h-3" />
+                    <span>AI-Powered Suggestions</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                {suggestions.map((suggestion, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className={`flex items-center space-x-3 p-4 rounded-xl cursor-pointer group transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'hover:bg-gray-700/50 border border-transparent hover:border-gray-600/50' 
+                        : 'hover:bg-gray-50/80 border border-transparent hover:border-gray-300/50'
+                    }`}
+                    whileHover={{ scale: 1.02, x: 4 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.2, rotateZ: 5 }}
+                    >
+                      {getSuggestionIcon(suggestion)}
+                    </motion.div>
+                    <span className="text-sm flex-1 group-hover:font-medium transition-all">
+                      {suggestion}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                      {getSuggestionBadge(suggestion) && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isDarkMode 
+                            ? 'bg-gray-700/50 text-gray-300' 
+                            : 'bg-gray-100/80 text-gray-600'
+                        }`}>
+                          {getSuggestionBadge(suggestion)}
+                        </span>
+                      )}
+                      {isUrl(suggestion) && (
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          <Zap className="w-3 h-3 text-green-400" />
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons with 3D Hover Effects */}
       <div className="flex items-center space-x-2">
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <Star className="w-4 h-4" />
-        </button>
-        <button 
-          onClick={onToggleSidebar}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        <motion.button 
+          whileHover={{ 
+            scale: 1.1, 
+            rotateY: 10,
+            boxShadow: isDarkMode 
+              ? '0 8px 32px rgba(251, 191, 36, 0.3)' 
+              : '0 8px 32px rgba(251, 191, 36, 0.2)'
+          }}
+          whileTap={{ scale: 0.95 }}
+          className={`p-3 rounded-xl transition-all duration-200 backdrop-blur-sm ${
+            isDarkMode 
+              ? 'bg-gray-800/50 hover:bg-yellow-500/20 border border-gray-700/50 hover:border-yellow-400/30' 
+              : 'bg-white/50 hover:bg-yellow-100/80 border border-gray-200/50 hover:border-yellow-300/50'
+          }`}
+          style={{ transformStyle: 'preserve-3d' }}
         >
-          <Menu className="w-4 h-4" />
-        </button>
+          <Star className="w-4 h-4 text-yellow-400" />
+        </motion.button>
+        
+        <motion.button 
+          whileHover={{ 
+            scale: 1.1, 
+            rotateY: -10,
+            boxShadow: isDarkMode 
+              ? '0 8px 32px rgba(139, 92, 246, 0.3)' 
+              : '0 8px 32px rgba(139, 92, 246, 0.2)'
+          }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onToggleAISidebar}
+          className={`p-3 rounded-xl transition-all duration-200 backdrop-blur-sm ${
+            isDarkMode 
+              ? 'bg-gray-800/50 hover:bg-purple-500/20 border border-gray-700/50 hover:border-purple-400/30' 
+              : 'bg-white/50 hover:bg-purple-100/80 border border-gray-200/50 hover:border-purple-300/50'
+          }`}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          <Menu className="w-4 h-4 text-purple-400" />
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
