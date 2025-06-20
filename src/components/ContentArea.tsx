@@ -25,7 +25,8 @@ import {
   Tablet,
   Cpu,
   Eye,
-  Lightbulb
+  Lightbulb,
+  Info
 } from 'lucide-react';
 import { Tab, AIState } from '../types';
 
@@ -39,20 +40,51 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
   const [loadingState, setLoadingState] = useState<'loading' | 'success' | 'error' | 'blocked'>('loading');
   const [retryCount, setRetryCount] = useState(0);
   const [iframeError, setIframeError] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  // List of domains that typically block iframe embedding
+  const blockedDomains = [
+    'youtube.com', 'youtu.be', 'google.com', 'facebook.com', 'twitter.com', 'x.com',
+    'instagram.com', 'linkedin.com', 'github.com', 'stackoverflow.com', 'reddit.com',
+    'netflix.com', 'amazon.com', 'ebay.com', 'paypal.com', 'apple.com', 'microsoft.com',
+    'zoom.us', 'teams.microsoft.com', 'meet.google.com', 'discord.com', 'slack.com'
+  ];
+
+  const isLikelyBlocked = (url: string) => {
+    try {
+      const domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname.toLowerCase();
+      return blockedDomains.some(blocked => domain.includes(blocked));
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (activeTab?.url && activeTab.url !== 'ai-browser://home') {
       setLoadingState('loading');
       setRetryCount(0);
       setIframeError(false);
+      setIframeLoaded(false);
       
-      const timer = setTimeout(() => {
-        setLoadingState('success');
-      }, 1200);
+      // If it's a known blocked domain, show blocked state immediately
+      if (isLikelyBlocked(activeTab.url)) {
+        setTimeout(() => {
+          setLoadingState('blocked');
+          setIframeError(true);
+        }, 800);
+      } else {
+        // For other domains, try loading and set a timeout
+        const timer = setTimeout(() => {
+          if (!iframeLoaded) {
+            setLoadingState('blocked');
+            setIframeError(true);
+          }
+        }, 5000); // 5 second timeout
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [activeTab?.url]);
+  }, [activeTab?.url, iframeLoaded]);
 
   if (!activeTab) {
     return (
@@ -81,10 +113,20 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
     setRetryCount(prev => prev + 1);
     setLoadingState('loading');
     setIframeError(false);
+    setIframeLoaded(false);
     
     setTimeout(() => {
-      setLoadingState('success');
-    }, 800);
+      if (!iframeLoaded) {
+        setLoadingState('blocked');
+        setIframeError(true);
+      }
+    }, 3000);
+  };
+
+  const handleIframeLoad = () => {
+    setIframeLoaded(true);
+    setLoadingState('success');
+    setIframeError(false);
   };
 
   const handleIframeError = () => {
@@ -200,50 +242,50 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
             {[
               {
                 icon: Globe,
-                title: 'Quantum Universal Access',
-                description: 'Browse ANY domain across all dimensions - .com, .org, international domains, and parallel web universes',
+                title: 'Universal Web Access',
+                description: 'Browse ANY domain worldwide - .com, .org, international domains. Smart iframe embedding with fallback options.',
                 color: 'blue',
-                badge: 'Multiversal',
+                badge: 'Global',
                 height: 'h-64'
               },
               {
                 icon: Shield,
-                title: 'Neural Security Matrix',
-                description: 'Advanced quantum encryption with AI-powered threat detection and real-time protection protocols',
+                title: 'Smart Security',
+                description: 'Intelligent handling of X-Frame-Options and CSP headers. Secure browsing with external window fallbacks.',
                 color: 'green',
-                badge: 'Quantum Safe',
+                badge: 'Secure',
                 height: 'h-72'
               },
               {
                 icon: Bot,
-                title: 'Consciousness Engine',
-                description: 'Self-aware AI that learns, adapts, and evolves with your browsing patterns for ultimate personalization',
+                title: 'AI Enhancement',
+                description: 'Every website gets AI analysis, summaries, and intelligent insights - even when iframe embedding is blocked.',
                 color: 'purple',
-                badge: 'Sentient',
+                badge: 'Smart',
                 height: 'h-80'
               },
               {
                 icon: Zap,
-                title: 'Hyperspeed Navigation',
-                description: 'Quantum tunneling technology for instantaneous page loads and interdimensional browsing',
+                title: 'Fast Navigation',
+                description: 'Instant detection of embedding restrictions with seamless fallback to external windows.',
                 color: 'yellow',
-                badge: 'Lightspeed',
+                badge: 'Fast',
                 height: 'h-68'
               },
               {
                 icon: Search,
-                title: 'Omniscient Search',
-                description: 'Search across all known databases, parallel internets, and future web archives simultaneously',
+                title: 'Universal Search',
+                description: 'Search across Google, Bing, DuckDuckGo, and specialized engines with smart domain detection.',
                 color: 'indigo',
-                badge: 'All-Knowing',
+                badge: 'Comprehensive',
                 height: 'h-76'
               },
               {
                 icon: FileText,
-                title: 'Reality Analysis',
-                description: 'AI-powered content verification, fact-checking across multiple realities, and truth synthesis',
+                title: 'Content Analysis',
+                description: 'AI-powered content extraction, summarization, and research tools that work regardless of embedding restrictions.',
                 color: 'red',
-                badge: 'Truth Engine',
+                badge: 'Intelligent',
                 height: 'h-72'
               }
             ].map((feature, index) => (
@@ -350,17 +392,17 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
             transition={{ delay: 1 }}
           >
             <h2 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Explore the Quantum Web
+              Try These Popular Sites
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {[
-                { name: 'Google Quantum', url: 'google.com', icon: '🔍', color: 'blue' },
-                { name: 'YouTube Neural', url: 'youtube.com', icon: '📺', color: 'red' },
-                { name: 'GitHub Matrix', url: 'github.com', icon: '🐙', color: 'gray' },
-                { name: 'Reddit Hive', url: 'reddit.com', icon: '🤖', color: 'orange' },
-                { name: 'Wiki Nexus', url: 'wikipedia.org', icon: '📖', color: 'blue' },
-                { name: 'Stack Overflow', url: 'stackoverflow.com', icon: '📚', color: 'orange' }
+                { name: 'Google', url: 'google.com', icon: '🔍', note: 'Search Engine' },
+                { name: 'YouTube', url: 'youtube.com', icon: '📺', note: 'Opens Externally' },
+                { name: 'GitHub', url: 'github.com', icon: '🐙', note: 'Opens Externally' },
+                { name: 'Wikipedia', url: 'wikipedia.org', icon: '📖', note: 'Embeddable' },
+                { name: 'Example', url: 'example.com', icon: '🌐', note: 'Test Site' },
+                { name: 'MDN Docs', url: 'developer.mozilla.org', icon: '📚', note: 'Embeddable' }
               ].map((link, index) => (
                 <motion.button
                   key={link.name}
@@ -387,7 +429,10 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                   >
                     {link.icon}
                   </motion.div>
-                  <span className="text-sm font-semibold text-center">{link.name}</span>
+                  <div className="text-center">
+                    <span className="text-sm font-semibold block">{link.name}</span>
+                    <span className="text-xs opacity-60">{link.note}</span>
+                  </div>
                   
                   {/* Glow Effect */}
                   <motion.div
@@ -400,36 +445,26 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
               ))}
             </div>
             
-            {/* Domain Examples with Kinetic Typography */}
+            {/* Info Box */}
             <motion.div 
-              className="mt-12 text-center"
+              className={`mt-8 p-4 rounded-2xl border ${
+                isDarkMode 
+                  ? 'bg-blue-900/20 border-blue-400/30' 
+                  : 'bg-blue-50/80 border-blue-300/50'
+              }`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.5 }}
             >
-              <h3 className="text-xl font-bold mb-6">Access Any Domain in the Multiverse</h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                {[
-                  'example.com', 'news.bbc.co.uk', 'amazon.de', 'yahoo.co.jp', 
-                  'medium.com', 'dev.to', 'hashnode.com', 'codepen.io'
-                ].map((domain, index) => (
-                  <motion.button
-                    key={domain}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1.6 + index * 0.05 }}
-                    onClick={() => handleSearchAction(domain)}
-                    className={`px-4 py-2 rounded-full backdrop-blur-sm border text-sm font-medium transition-all duration-300 ${
-                      isDarkMode 
-                        ? 'bg-gray-800/30 border-gray-700/30 hover:bg-gray-700/50 hover:border-blue-400/50' 
-                        : 'bg-white/30 border-gray-200/30 hover:bg-white/60 hover:border-blue-400/50'
-                    }`}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    {domain}
-                  </motion.button>
-                ))}
+              <div className="flex items-start space-x-3">
+                <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-blue-400 mb-1">Smart Embedding Detection</h4>
+                  <p className="text-sm opacity-80">
+                    Some sites like YouTube, Google, and GitHub prevent iframe embedding for security. 
+                    We automatically detect this and offer to open them in new windows while providing AI analysis.
+                  </p>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -459,7 +494,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                 >
                   <Globe className="w-5 h-5 text-blue-400" />
                 </motion.div>
-                <span className="font-semibold text-blue-400">Quantum Web Portal</span>
+                <span className="font-semibold text-blue-400">Web Portal</span>
               </div>
               
               <div className="flex-1 min-w-0">
@@ -475,7 +510,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       className="flex items-center space-x-1"
                     >
                       <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm text-green-400">Neural Link Active</span>
+                      <span className="text-sm text-green-400">Embedded Successfully</span>
                     </motion.div>
                   )}
                   {loadingState === 'loading' && (
@@ -485,7 +520,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       transition={{ duration: 1.5, repeat: Infinity }}
                     >
                       <Loader className="w-4 h-4 text-blue-400 animate-spin" />
-                      <span className="text-sm text-blue-400">Establishing Quantum Link...</span>
+                      <span className="text-sm text-blue-400">Loading...</span>
                     </motion.div>
                   )}
                   {(loadingState === 'blocked' || iframeError) && (
@@ -494,16 +529,10 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       animate={{ scale: 1 }}
                       className="flex items-center space-x-1"
                     >
-                      <AlertTriangle className="w-4 h-4 text-yellow-400" />
-                      <span className="text-sm text-yellow-400">Quantum Barrier Detected</span>
+                      <Shield className="w-4 h-4 text-yellow-400" />
+                      <span className="text-sm text-yellow-400">Embedding Blocked</span>
                     </motion.div>
                   )}
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Monitor className="w-4 h-4 opacity-60" />
-                  <Smartphone className="w-4 h-4 opacity-40" />
-                  <Tablet className="w-4 h-4 opacity-40" />
                 </div>
                 
                 <motion.button 
@@ -516,7 +545,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  Open Portal
+                  Open External
                 </motion.button>
               </div>
             </div>
@@ -558,9 +587,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                     </motion.div>
                     
                     <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                      Quantum Portal Initializing
+                      Loading Website
                     </h3>
-                    <p className="opacity-70 mb-6">Establishing neural link to {activeTab.url}</p>
+                    <p className="opacity-70 mb-6">Attempting to embed {activeTab.url}</p>
                     
                     <div className="flex items-center justify-center space-x-3 text-sm">
                       <motion.div
@@ -569,7 +598,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       >
                         <Brain className="w-5 h-5 text-purple-400" />
                       </motion.div>
-                      <span className="opacity-80">AI consciousness synchronizing...</span>
+                      <span className="opacity-80">Checking embedding permissions...</span>
                     </div>
                   </div>
                 </motion.div>
@@ -586,8 +615,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                     src={activeTab.url}
                     className="w-full h-full border-0"
                     title={activeTab.title}
+                    onLoad={handleIframeLoad}
                     onError={handleIframeError}
-                    onLoad={() => setLoadingState('success')}
                     sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
                     referrerPolicy="no-referrer-when-downgrade"
                   />
@@ -611,8 +640,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                         <Bot className="w-5 h-5 text-purple-400" />
                       </motion.div>
                       <div>
-                        <span className="font-semibold text-sm">Neural Enhanced</span>
-                        <div className="text-xs opacity-70">{Math.round(aiState.confidence * 100)}% Quantum Sync</div>
+                        <span className="font-semibold text-sm">AI Enhanced</span>
+                        <div className="text-xs opacity-70">{Math.round(aiState.confidence * 100)}% Analysis</div>
                       </div>
                     </div>
                   </motion.div>
@@ -636,13 +665,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <AlertTriangle className="w-20 h-20 text-yellow-400 mx-auto mb-6" />
+                      <Shield className="w-20 h-20 text-blue-400 mx-auto mb-6" />
                     </motion.div>
                     
-                    <h3 className="text-2xl font-bold mb-4">Quantum Barrier Detected</h3>
+                    <h3 className="text-2xl font-bold mb-4">Website Security Protection</h3>
                     <p className="opacity-80 mb-8 leading-relaxed">
-                      This website has deployed quantum security protocols that prevent neural embedding. 
-                      This is common for high-security sites to prevent interdimensional access attacks.
+                      <strong>{new URL(activeTab.url).hostname}</strong> prevents iframe embedding using X-Frame-Options headers. 
+                      This is a security feature to protect against clickjacking attacks and is common for major websites.
                     </p>
                     
                     {/* Website Preview Card */}
@@ -669,9 +698,9 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                       
                       <div className="grid grid-cols-3 gap-4">
                         {[
-                          { icon: Shield, label: 'Quantum Safe', value: 'Protected', color: 'green' },
-                          { icon: Brain, label: 'AI Analysis', value: 'Scanning', color: 'purple' },
-                          { icon: Eye, label: 'Neural Scan', value: 'Active', color: 'blue' }
+                          { icon: Shield, label: 'Security', value: 'Protected', color: 'green' },
+                          { icon: Brain, label: 'AI Ready', value: 'Available', color: 'purple' },
+                          { icon: ExternalLink, label: 'Access', value: 'External', color: 'blue' }
                         ].map((stat) => (
                           <motion.div
                             key={stat.label}
@@ -698,7 +727,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                         whileTap={{ scale: 0.98 }}
                       >
                         <ExternalLink className="w-5 h-5" />
-                        <span>Open in Quantum Portal</span>
+                        <span>Open in New Window</span>
                       </motion.button>
                       
                       <motion.button 
@@ -712,7 +741,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                         whileTap={{ scale: 0.98 }}
                       >
                         <RefreshCw className="w-5 h-5" />
-                        <span>Retry Neural Link {retryCount > 0 && `(${retryCount})`}</span>
+                        <span>Try Again {retryCount > 0 && `(${retryCount})`}</span>
                       </motion.button>
                     </div>
                     
@@ -729,13 +758,13 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                     >
                       <h4 className="font-bold text-blue-400 mb-4 flex items-center space-x-2">
                         <Lightbulb className="w-5 h-5" />
-                        <span>Neural Alternatives</span>
+                        <span>AI Alternatives</span>
                       </h4>
                       <div className="space-y-3">
                         {[
-                          { label: 'Generate AI summary of this website', action: () => handleSearchAction(`site:${new URL(activeTab.url).hostname} summary`) },
-                          { label: 'Find quantum-accessible alternatives', action: () => handleSearchAction(`${activeTab.title} alternative websites`) },
-                          { label: 'Search neural archives for reviews', action: () => handleSearchAction(`${new URL(activeTab.url).hostname} reviews`) }
+                          { label: 'Get AI summary of this website', action: () => handleSearchAction(`site:${new URL(activeTab.url).hostname} summary`) },
+                          { label: 'Find similar embeddable websites', action: () => handleSearchAction(`${activeTab.title} alternative websites`) },
+                          { label: 'Search for reviews and information', action: () => handleSearchAction(`${new URL(activeTab.url).hostname} reviews`) }
                         ].map((option, index) => (
                           <motion.button
                             key={index}
@@ -779,8 +808,8 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
           >
             <Globe className="w-16 h-16 text-blue-400 mx-auto mb-4" />
           </motion.div>
-          <h3 className="text-lg font-medium mb-2">Ready to Browse the Quantum Web</h3>
-          <p className="opacity-70">Enter any URL or search term to begin your journey</p>
+          <h3 className="text-lg font-medium mb-2">Ready to Browse</h3>
+          <p className="opacity-70">Enter any URL or search term to begin</p>
         </motion.div>
       </div>
     );
@@ -820,7 +849,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
             <Shield className="w-4 h-4" />
           </motion.div>
           <span>
-            {activeTab.securityStatus === 'secure' ? 'Quantum secure connection' : 'Security warning detected'}
+            {activeTab.securityStatus === 'secure' ? 'Secure connection' : 'Security notice'}
           </span>
           <span className="opacity-60">• {activeTab.url}</span>
           <div className="ml-auto flex items-center space-x-3">
@@ -834,7 +863,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
               >
-                ✓ Neural Link Active
+                ✓ Embedded
               </motion.span>
             )}
             {loadingState === 'loading' && (
@@ -847,7 +876,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                ⟳ Quantum Sync...
+                ⟳ Loading...
               </motion.span>
             )}
             {(loadingState === 'blocked' || iframeError) && (
@@ -860,7 +889,7 @@ const ContentArea: React.FC<ContentAreaProps> = ({ activeTab, aiState, isDarkMod
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
               >
-                🛡️ Quantum Protected
+                🛡️ Protected
               </motion.span>
             )}
           </div>
